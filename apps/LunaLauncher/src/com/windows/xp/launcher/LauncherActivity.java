@@ -184,17 +184,23 @@ public class LauncherActivity extends Activity {
     }
 
     private void setupDesktopIcons() {
-        setDesktopLauncher(R.id.icon_my_computer, "com.sec.android.app.myfiles", new Runnable() {
+        findViewById(R.id.icon_my_computer).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void run() {
-                startActivity(new Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS));
+            public void onClick(View v) {
+                if (startMenuContainer.getVisibility() == View.VISIBLE) {
+                    startMenuContainer.setVisibility(View.GONE);
+                }
+                launchExplorer("computer://");
             }
         });
 
-        setDesktopLauncher(R.id.icon_my_documents, "com.sec.android.app.myfiles", new Runnable() {
+        findViewById(R.id.icon_my_documents).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void run() {
-                Toast.makeText(LauncherActivity.this, "Opening My Documents (/sdcard/Documents)...", Toast.LENGTH_SHORT).show();
+            public void onClick(View v) {
+                if (startMenuContainer.getVisibility() == View.VISIBLE) {
+                    startMenuContainer.setVisibility(View.GONE);
+                }
+                launchExplorer("/sdcard/Documents");
             }
         });
 
@@ -291,7 +297,7 @@ public class LauncherActivity extends Activity {
             @Override
             public void onClick(View v) {
                 startMenuContainer.setVisibility(View.GONE);
-                Toast.makeText(LauncherActivity.this, "My Documents (/sdcard/Documents)", Toast.LENGTH_SHORT).show();
+                launchExplorer("/sdcard/Documents");
             }
         });
 
@@ -299,9 +305,7 @@ public class LauncherActivity extends Activity {
             @Override
             public void onClick(View v) {
                 startMenuContainer.setVisibility(View.GONE);
-                if (!launchApp("com.bo.fotoo")) {
-                    launchApp("com.boombuler.fotoo");
-                }
+                launchExplorer("/sdcard/Pictures");
             }
         });
 
@@ -309,7 +313,7 @@ public class LauncherActivity extends Activity {
             @Override
             public void onClick(View v) {
                 startMenuContainer.setVisibility(View.GONE);
-                startActivity(new Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS));
+                launchExplorer("computer://");
             }
         });
 
@@ -365,6 +369,20 @@ public class LauncherActivity extends Activity {
         } catch (Exception ignored) {}
         Toast.makeText(this, "Application [" + pkg + "] starting...", Toast.LENGTH_SHORT).show();
         return false;
+    }
+
+    private void launchExplorer(String path) {
+        try {
+            Intent intent = new Intent();
+            intent.setClassName("com.windows.xp.explorer", "com.windows.xp.explorer.ExplorerActivity");
+            if (path != null) {
+                intent.putExtra("path", path);
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        } catch (Exception e) {
+            launchApp("com.windows.xp.explorer");
+        }
     }
 
     private void showGamesDialog() {
