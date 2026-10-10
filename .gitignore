@@ -2,3 +2,7 @@ build/
 bin/
 gen/
 *.apk
+dist/*.zip
+dist/*.tar*
+*.img
+*.raw

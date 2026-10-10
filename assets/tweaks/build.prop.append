@@ -1,4 +1,8 @@
 # Windows XP Luna Performance & UI Tweaks
+# Custom ROM Identification
+ro.build.display.id=Windows XP Professional Luna Edition (v1.0)
+ro.product.model=Galaxy Tab 3 - Windows XP Edition
+
 # Hide Android virtual navigation bar (hardware keys used for Start/AltTab/Minimize)
 qemu.hw.mainkeys=1
 
