@@ -56,6 +56,7 @@ public class ExplorerActivity extends Activity implements TaskPaneController.OnT
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
         setContentView(R.layout.activity_explorer);
 
         fileManager = new FileOperationsManager();
@@ -283,8 +284,22 @@ public class ExplorerActivity extends Activity implements TaskPaneController.OnT
             etAddress.setText("My Computer");
         } else {
             File f = new File(path);
-            tvWindowTitle.setText(f.getName().isEmpty() ? path : f.getName());
-            imgWindowIcon.setImageResource(MimeTypeResolver.getIconForFile(f));
+            String title = f.getName();
+            int iconRes = MimeTypeResolver.getIconForFile(f);
+
+            if (path.equals("/sdcard") || path.equals("/storage/emulated/0")) {
+                title = "Local Disk (C:)";
+                iconRes = R.drawable.ic_drive_c;
+            } else if (path.equals("/storage/extSdCard")) {
+                title = "Removable Disk (D:)";
+                iconRes = R.drawable.ic_drive_d;
+            } else if (path.equals("/system")) {
+                title = "System (S:)";
+                iconRes = R.drawable.ic_drive_c;
+            }
+
+            tvWindowTitle.setText(title.isEmpty() ? path : title);
+            imgWindowIcon.setImageResource(iconRes);
             etAddress.setText(toWindowsPath(path));
         }
 
