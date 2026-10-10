@@ -213,10 +213,12 @@ public class LauncherActivity extends Activity {
             }
         });
 
-        setDesktopLauncher(R.id.icon_fotoo, "com.boombuler.fotoo", new Runnable() {
+        findViewById(R.id.icon_fotoo).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void run() {
-                Toast.makeText(LauncherActivity.this, "Fotoo Digital Frame", Toast.LENGTH_SHORT).show();
+            public void onClick(View v) {
+                if (!launchApp("com.bo.fotoo") && !launchApp("com.boombuler.fotoo")) {
+                    Toast.makeText(LauncherActivity.this, "Fotoo Digital Photo Frame (/sdcard/Pictures)", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -279,7 +281,9 @@ public class LauncherActivity extends Activity {
             @Override
             public void onClick(View v) {
                 startMenuContainer.setVisibility(View.GONE);
-                launchApp("com.boombuler.fotoo");
+                if (!launchApp("com.bo.fotoo")) {
+                    launchApp("com.boombuler.fotoo");
+                }
             }
         });
 
@@ -287,7 +291,7 @@ public class LauncherActivity extends Activity {
             @Override
             public void onClick(View v) {
                 startMenuContainer.setVisibility(View.GONE);
-                Toast.makeText(LauncherActivity.this, "My Documents", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LauncherActivity.this, "My Documents (/sdcard/Documents)", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -295,7 +299,9 @@ public class LauncherActivity extends Activity {
             @Override
             public void onClick(View v) {
                 startMenuContainer.setVisibility(View.GONE);
-                launchApp("com.boombuler.fotoo");
+                if (!launchApp("com.bo.fotoo")) {
+                    launchApp("com.boombuler.fotoo");
+                }
             }
         });
 
@@ -369,7 +375,11 @@ public class LauncherActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
-                    case 0: launchApp("com.windows.xp.pinball"); break;
+                    case 0:
+                        if (!launchApp("com.fexed.spacecadetpinball")) {
+                            launchApp("com.windows.xp.pinball");
+                        }
+                        break;
                     case 1: launchApp("com.windows.xp.minesweeper"); break;
                     case 2: launchApp("com.windows.xp.solitaire"); break;
                 }
