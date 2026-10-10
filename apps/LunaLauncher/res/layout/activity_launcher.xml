@@ -295,8 +295,46 @@
                     android:textColor="#FFFFFF"
                     android:textSize="11sp" />
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/icon_cmd"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/desktop_icon_selector"
+                android:clickable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="6dp">
+
+                <ImageView
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_cmd" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    android:shadowColor="#FF000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="Command Prompt"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
+
+    <!-- Desktop Floating Window Container (1024x570dp above 30dp Taskbar) -->
+    <FrameLayout
+        android:id="@+id/desktop_window_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="32dp"
+        android:clipChildren="true" />
 
     <!-- Start Menu Popup (Bottom-Left) -->
     <LinearLayout
@@ -405,6 +443,17 @@
                     android:paddingLeft="6dp">
                     <ImageView android:layout_width="28dp" android:layout_height="28dp" android:src="@drawable/ic_fotoo" />
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:text="Fotoo Frame" android:textColor="#000000" android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/sm_item_cmd"
+                    android:layout_width="match_parent"
+                    android:layout_height="42dp"
+                    android:clickable="true"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="6dp">
+                    <ImageView android:layout_width="28dp" android:layout_height="28dp" android:src="@drawable/ic_cmd" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:text="Command Prompt" android:textColor="#000000" android:textSize="12sp" />
                 </LinearLayout>
 
                 <View

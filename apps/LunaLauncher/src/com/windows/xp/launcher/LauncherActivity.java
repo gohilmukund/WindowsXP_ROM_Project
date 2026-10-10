@@ -18,12 +18,21 @@ import android.provider.Settings;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.windows.xp.launcher.window.CmdPromptView;
+import com.windows.xp.launcher.window.ExplorerWindowView;
+import com.windows.xp.launcher.window.NotepadWindowView;
+import com.windows.xp.launcher.window.PaintWindowView;
+import com.windows.xp.launcher.window.WindowFrameView;
+
+import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -35,11 +44,15 @@ public class LauncherActivity extends Activity {
     private LinearLayout taskbarTabsContainer;
     private TextView trayClock;
     private TextView trayBattery;
+    private FrameLayout desktopWindowContainer;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private AltTabDialog altTabDialog;
     private ActivityManager activityManager;
     private PackageManager packageManager;
+
+    private final List<WindowFrameView> openWindows = new ArrayList<WindowFrameView>();
+    private WindowFrameView activeWindow = null;
 
     private final BroadcastReceiver batteryReceiver = new BroadcastReceiver() {
         @Override
@@ -60,7 +73,9 @@ public class LauncherActivity extends Activity {
     private final BroadcastReceiver minimizeReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            // Animate window down to desktop and refresh taskbar tabs
+            if (activeWindow != null && activeWindow.getVisibility() == View.VISIBLE) {
+                activeWindow.minimize();
+            }
             refreshTaskbarTabs();
         }
     };
@@ -87,6 +102,7 @@ public class LauncherActivity extends Activity {
         taskbarTabsContainer = (LinearLayout) findViewById(R.id.taskbar_tabs_container);
         trayClock = (TextView) findViewById(R.id.tray_clock);
         trayBattery = (TextView) findViewById(R.id.tray_battery);
+        desktopWindowContainer = (FrameLayout) findViewById(R.id.desktop_window_container);
 
         setupStartButton();
         setupDesktopIcons();
@@ -142,6 +158,11 @@ public class LauncherActivity extends Activity {
                 startMenuContainer.setVisibility(View.GONE);
                 return true;
             }
+            // If active floating window is open, minimize it to taskbar
+            if (activeWindow != null && activeWindow.getVisibility() == View.VISIBLE) {
+                activeWindow.minimize();
+                return true;
+            }
             return true; // Ignore back on bare desktop to prevent quitting
         }
         return super.onKeyDown(keyCode, event);
@@ -172,7 +193,6 @@ public class LauncherActivity extends Activity {
             }
         });
 
-        // Close start menu when desktop is tapped
         findViewById(R.id.root_desktop).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -187,27 +207,22 @@ public class LauncherActivity extends Activity {
         findViewById(R.id.icon_my_computer).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (startMenuContainer.getVisibility() == View.VISIBLE) {
-                    startMenuContainer.setVisibility(View.GONE);
-                }
-                launchExplorer("computer://");
+                closeStartMenu();
+                openExplorer("computer://");
             }
         });
 
         findViewById(R.id.icon_my_documents).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (startMenuContainer.getVisibility() == View.VISIBLE) {
-                    startMenuContainer.setVisibility(View.GONE);
-                }
-                launchExplorer("/sdcard/Documents");
+                closeStartMenu();
+                openExplorer("/sdcard/Documents");
             }
         });
 
         setDesktopLauncher(R.id.icon_internet_explorer, "com.windows.xp.internetexplorer", new Runnable() {
             @Override
             public void run() {
-                // Fallback to installed Firefox
                 launchApp("org.mozilla.firefox");
             }
         });
@@ -222,18 +237,41 @@ public class LauncherActivity extends Activity {
         findViewById(R.id.icon_fotoo).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                closeStartMenu();
                 if (!launchApp("com.bo.fotoo") && !launchApp("com.boombuler.fotoo")) {
                     Toast.makeText(LauncherActivity.this, "Fotoo Digital Photo Frame (/sdcard/Pictures)", Toast.LENGTH_SHORT).show();
                 }
             }
         });
 
-        setDesktopLauncher(R.id.icon_paint, "com.windows.xp.mspaint", null);
-        setDesktopLauncher(R.id.icon_notepad, "com.windows.xp.notepad", null);
+        findViewById(R.id.icon_paint).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                closeStartMenu();
+                openPaint();
+            }
+        });
+
+        findViewById(R.id.icon_notepad).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                closeStartMenu();
+                openNotepad(null);
+            }
+        });
+
+        findViewById(R.id.icon_cmd).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                closeStartMenu();
+                openCommandPrompt();
+            }
+        });
 
         findViewById(R.id.icon_games).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                closeStartMenu();
                 showGamesDialog();
             }
         });
@@ -241,6 +279,7 @@ public class LauncherActivity extends Activity {
         findViewById(R.id.icon_recycle_bin).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                closeStartMenu();
                 Toast.makeText(LauncherActivity.this, "Recycle Bin is empty.", Toast.LENGTH_SHORT).show();
             }
         });
@@ -250,7 +289,7 @@ public class LauncherActivity extends Activity {
         findViewById(R.id.sm_item_ie).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startMenuContainer.setVisibility(View.GONE);
+                closeStartMenu();
                 if (!launchApp("com.windows.xp.internetexplorer")) {
                     launchApp("org.mozilla.firefox");
                 }
@@ -260,7 +299,7 @@ public class LauncherActivity extends Activity {
         findViewById(R.id.sm_item_wmp).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startMenuContainer.setVisibility(View.GONE);
+                closeStartMenu();
                 if (!launchApp("com.windows.xp.wmp")) {
                     launchApp("org.schabi.newpipelegacy");
                 }
@@ -270,23 +309,31 @@ public class LauncherActivity extends Activity {
         findViewById(R.id.sm_item_paint).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startMenuContainer.setVisibility(View.GONE);
-                launchApp("com.windows.xp.mspaint");
+                closeStartMenu();
+                openPaint();
             }
         });
 
         findViewById(R.id.sm_item_notepad).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startMenuContainer.setVisibility(View.GONE);
-                launchApp("com.windows.xp.notepad");
+                closeStartMenu();
+                openNotepad(null);
+            }
+        });
+
+        findViewById(R.id.sm_item_cmd).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                closeStartMenu();
+                openCommandPrompt();
             }
         });
 
         findViewById(R.id.sm_item_fotoo).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startMenuContainer.setVisibility(View.GONE);
+                closeStartMenu();
                 if (!launchApp("com.bo.fotoo")) {
                     launchApp("com.boombuler.fotoo");
                 }
@@ -296,31 +343,31 @@ public class LauncherActivity extends Activity {
         findViewById(R.id.sm_item_my_docs).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startMenuContainer.setVisibility(View.GONE);
-                launchExplorer("/sdcard/Documents");
+                closeStartMenu();
+                openExplorer("/sdcard/Documents");
             }
         });
 
         findViewById(R.id.sm_item_my_pics).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startMenuContainer.setVisibility(View.GONE);
-                launchExplorer("/sdcard/Pictures");
+                closeStartMenu();
+                openExplorer("/sdcard/Pictures");
             }
         });
 
         findViewById(R.id.sm_item_my_comp).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startMenuContainer.setVisibility(View.GONE);
-                launchExplorer("computer://");
+                closeStartMenu();
+                openExplorer("computer://");
             }
         });
 
         findViewById(R.id.sm_item_control_panel).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startMenuContainer.setVisibility(View.GONE);
+                closeStartMenu();
                 startActivity(new Intent(Settings.ACTION_SETTINGS));
             }
         });
@@ -328,7 +375,7 @@ public class LauncherActivity extends Activity {
         findViewById(R.id.btn_sm_logoff).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startMenuContainer.setVisibility(View.GONE);
+                closeStartMenu();
                 Toast.makeText(LauncherActivity.this, "Windows XP: Session Locked.", Toast.LENGTH_SHORT).show();
             }
         });
@@ -336,10 +383,16 @@ public class LauncherActivity extends Activity {
         findViewById(R.id.btn_sm_shutdown).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startMenuContainer.setVisibility(View.GONE);
+                closeStartMenu();
                 showShutdownDialog();
             }
         });
+    }
+
+    private void closeStartMenu() {
+        if (startMenuContainer != null && startMenuContainer.getVisibility() == View.VISIBLE) {
+            startMenuContainer.setVisibility(View.GONE);
+        }
     }
 
     private void setDesktopLauncher(int viewId, final String pkg, final Runnable fallback) {
@@ -348,15 +401,118 @@ public class LauncherActivity extends Activity {
         v.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (startMenuContainer.getVisibility() == View.VISIBLE) {
-                    startMenuContainer.setVisibility(View.GONE);
-                }
+                closeStartMenu();
                 if (!launchApp(pkg) && fallback != null) {
                     fallback.run();
                 }
             }
         });
     }
+
+    // --- Multi-Window Management ---
+
+    public void openWindow(final WindowFrameView window, final String title, final int iconRes, int widthDp, int heightDp) {
+        int cascade = (openWindows.size() % 6) * 28;
+        int x = dpToPx(50 + cascade);
+        int y = dpToPx(30 + cascade);
+
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(dpToPx(widthDp), dpToPx(heightDp));
+        window.setLayoutParams(lp);
+        window.setX(x);
+        window.setY(y);
+        window.setTitle(title);
+        window.setIcon(iconRes);
+
+        window.setWindowListener(new WindowFrameView.WindowListener() {
+            @Override
+            public void onWindowFocus(WindowFrameView w) {
+                activateWindow(w);
+            }
+
+            @Override
+            public void onWindowMinimize(WindowFrameView w) {
+                if (activeWindow == w) {
+                    activeWindow = null;
+                }
+                refreshTaskbarTabs();
+            }
+
+            @Override
+            public void onWindowMaximize(WindowFrameView w, boolean isMaximized) {
+                activateWindow(w);
+            }
+
+            @Override
+            public void onWindowClose(WindowFrameView w) {
+                openWindows.remove(w);
+                if (activeWindow == w) {
+                    activeWindow = openWindows.isEmpty() ? null : openWindows.get(openWindows.size() - 1);
+                }
+                refreshTaskbarTabs();
+            }
+        });
+
+        desktopWindowContainer.addView(window);
+        openWindows.add(window);
+        activateWindow(window);
+    }
+
+    public void activateWindow(WindowFrameView window) {
+        for (WindowFrameView w : openWindows) {
+            w.setActive(w == window);
+        }
+        if (window != null) {
+            window.bringToFront();
+        }
+        activeWindow = window;
+        refreshTaskbarTabs();
+    }
+
+    public void openCommandPrompt() {
+        final WindowFrameView win = new WindowFrameView(this);
+        CmdPromptView cmdView = new CmdPromptView(this);
+        cmdView.setOnExitListener(new CmdPromptView.OnExitListener() {
+            @Override
+            public void onExit() {
+                win.close();
+            }
+        });
+        win.setWindowContent(cmdView);
+        openWindow(win, "C:\\WINDOWS\\system32\\cmd.exe", R.drawable.ic_cmd, 560, 360);
+    }
+
+    public void openNotepad(File file) {
+        WindowFrameView win = new WindowFrameView(this);
+        NotepadWindowView notepadView = new NotepadWindowView(this);
+        win.setWindowContent(notepadView);
+        String title = file != null ? file.getName() + " - Notepad" : "Untitled - Notepad";
+        openWindow(win, title, R.drawable.ic_notepad, 540, 380);
+    }
+
+    public void openPaint() {
+        WindowFrameView win = new WindowFrameView(this);
+        PaintWindowView paintView = new PaintWindowView(this);
+        win.setWindowContent(paintView);
+        openWindow(win, "untitled - Paint", R.drawable.ic_paint, 580, 420);
+    }
+
+    public void openExplorer(String path) {
+        WindowFrameView win = new WindowFrameView(this);
+        ExplorerWindowView explorerView = new ExplorerWindowView(this);
+        explorerView.setFileActionListener(new ExplorerWindowView.FileActionListener() {
+            @Override
+            public void onOpenTextFile(File file) {
+                openNotepad(file);
+            }
+        });
+        win.setWindowContent(explorerView);
+        if (path != null) {
+            explorerView.navigateTo(path, false);
+        }
+        openWindow(win, "Windows Explorer", R.drawable.ic_my_computer, 620, 440);
+    }
+
+    // --- App Launching & Helpers ---
 
     private boolean launchApp(String pkg) {
         try {
@@ -369,20 +525,6 @@ public class LauncherActivity extends Activity {
         } catch (Exception ignored) {}
         Toast.makeText(this, "Application [" + pkg + "] starting...", Toast.LENGTH_SHORT).show();
         return false;
-    }
-
-    private void launchExplorer(String path) {
-        try {
-            Intent intent = new Intent();
-            intent.setClassName("com.windows.xp.explorer", "com.windows.xp.explorer.ExplorerActivity");
-            if (path != null) {
-                intent.putExtra("path", path);
-            }
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-        } catch (Exception e) {
-            launchApp("com.windows.xp.explorer");
-        }
     }
 
     private void showGamesDialog() {
@@ -441,6 +583,68 @@ public class LauncherActivity extends Activity {
 
     private void refreshTaskbarTabs() {
         taskbarTabsContainer.removeAllViews();
+
+        // 1. Render Tabs for Open Floating Windows
+        for (final WindowFrameView window : openWindows) {
+            LinearLayout tab = new LinearLayout(this);
+            tab.setOrientation(LinearLayout.HORIZONTAL);
+            tab.setGravity(android.view.Gravity.CENTER_VERTICAL);
+
+            boolean isCurrentActive = (window == activeWindow && window.getVisibility() == View.VISIBLE);
+            if (isCurrentActive) {
+                tab.setBackgroundResource(R.drawable.taskbar_tab_active);
+            } else {
+                tab.setBackgroundResource(R.drawable.taskbar_tab_bg);
+            }
+            tab.setPadding(dpToPx(8), dpToPx(2), dpToPx(10), dpToPx(2));
+            tab.setClickable(true);
+
+            ImageView img = new ImageView(this);
+            int iconRes = R.drawable.ic_my_computer;
+            String t = window.getTitle().toLowerCase();
+            if (t.contains("cmd") || t.contains("command")) iconRes = R.drawable.ic_cmd;
+            else if (t.contains("notepad")) iconRes = R.drawable.ic_notepad;
+            else if (t.contains("paint")) iconRes = R.drawable.ic_paint;
+            else if (t.contains("explorer")) iconRes = R.drawable.ic_my_computer;
+            img.setImageResource(iconRes);
+
+            LinearLayout.LayoutParams imgP = new LinearLayout.LayoutParams(dpToPx(16), dpToPx(16));
+            tab.addView(img, imgP);
+
+            TextView tv = new TextView(this);
+            tv.setText(window.getTitle());
+            tv.setTextColor(0xFFFFFFFF);
+            tv.setTextSize(11);
+            tv.setMaxLines(1);
+            LinearLayout.LayoutParams tvP = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+            tvP.leftMargin = dpToPx(4);
+            tab.addView(tv, tvP);
+
+            LinearLayout.LayoutParams tabParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT);
+            tabParams.rightMargin = dpToPx(3);
+            tabParams.topMargin = dpToPx(2);
+            tabParams.bottomMargin = dpToPx(2);
+
+            tab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (window == activeWindow && window.getVisibility() == View.VISIBLE) {
+                        window.minimize();
+                    } else {
+                        window.restoreFromMinimize();
+                        activateWindow(window);
+                    }
+                }
+            });
+
+            taskbarTabsContainer.addView(tab, tabParams);
+        }
+
+        // 2. Render Tabs for Background Android Tasks
         try {
             List<ActivityManager.RunningTaskInfo> tasks = activityManager.getRunningTasks(6);
             if (tasks == null) return;
@@ -448,7 +652,7 @@ public class LauncherActivity extends Activity {
             for (final ActivityManager.RunningTaskInfo task : tasks) {
                 if (task.baseActivity == null) continue;
                 String pkg = task.baseActivity.getPackageName();
-                if (getPackageName().equals(pkg)) continue; // Don't show launcher itself as tab
+                if (getPackageName().equals(pkg)) continue;
 
                 CharSequence label;
                 Drawable icon;
@@ -463,12 +667,12 @@ public class LauncherActivity extends Activity {
                 tab.setOrientation(LinearLayout.HORIZONTAL);
                 tab.setGravity(android.view.Gravity.CENTER_VERTICAL);
                 tab.setBackgroundResource(R.drawable.taskbar_tab_bg);
-                tab.setPadding(12, 4, 16, 4);
+                tab.setPadding(dpToPx(8), dpToPx(2), dpToPx(10), dpToPx(2));
                 tab.setClickable(true);
 
                 ImageView img = new ImageView(this);
                 img.setImageDrawable(icon);
-                LinearLayout.LayoutParams imgP = new LinearLayout.LayoutParams(20, 20);
+                LinearLayout.LayoutParams imgP = new LinearLayout.LayoutParams(dpToPx(16), dpToPx(16));
                 tab.addView(img, imgP);
 
                 TextView tv = new TextView(this);
@@ -479,15 +683,15 @@ public class LauncherActivity extends Activity {
                 LinearLayout.LayoutParams tvP = new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.WRAP_CONTENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT);
-                tvP.leftMargin = 6;
+                tvP.leftMargin = dpToPx(4);
                 tab.addView(tv, tvP);
 
                 LinearLayout.LayoutParams tabParams = new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.WRAP_CONTENT,
                         ViewGroup.LayoutParams.MATCH_PARENT);
-                tabParams.rightMargin = 4;
-                tabParams.topMargin = 2;
-                tabParams.bottomMargin = 2;
+                tabParams.rightMargin = dpToPx(3);
+                tabParams.topMargin = dpToPx(2);
+                tabParams.bottomMargin = dpToPx(2);
 
                 tab.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -501,5 +705,9 @@ public class LauncherActivity extends Activity {
                 taskbarTabsContainer.addView(tab, tabParams);
             }
         } catch (Exception ignored) {}
+    }
+
+    private int dpToPx(int dp) {
+        return (int) (dp * getResources().getDisplayMetrics().density + 0.5f);
     }
 }
