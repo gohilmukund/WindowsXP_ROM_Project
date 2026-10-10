@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ECE9D8"
+    android:orientation="vertical">
+
+    <!-- Title Bar -->
+    <LinearLayout
+        android:id="@+id/notepad_title_bar"
+        android:layout_width="match_parent"
+        android:layout_height="26dp"
+        android:background="@drawable/titlebar_bg"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="6dp"
+        android:paddingRight="4dp">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/ic_notepad" />
+
+        <TextView
+            android:id="@+id/notepad_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingLeft="6dp"
+            android:singleLine="true"
+            android:text="Untitled - Notepad"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/notepad_btn_minimize"
+            android:layout_width="20dp"
+            android:layout_height="18dp"
+            android:background="@drawable/ie_btn_min_max_bg"
+            android:gravity="center"
+            android:padding="0dp"
+            android:text="_"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/notepad_btn_maximize"
+            android:layout_width="20dp"
+            android:layout_height="18dp"
+            android:layout_marginLeft="2dp"
+            android:background="@drawable/ie_btn_min_max_bg"
+            android:gravity="center"
+            android:padding="0dp"
+            android:text="口"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/notepad_btn_close"
+            android:layout_width="20dp"
+            android:layout_height="18dp"
+            android:layout_marginLeft="2dp"
+            android:background="@drawable/ie_btn_close_bg"
+            android:gravity="center"
+            android:padding="0dp"
+            android:text="✕"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Menu Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="22dp"
+        android:background="#ECE9D8"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="4dp">
+
+        <TextView
+            android:id="@+id/notepad_menu_file"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:text="File"
+            android:textColor="#000000"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/notepad_menu_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:text="Edit"
+            android:textColor="#000000"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/notepad_menu_format"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:text="Format"
+            android:textColor="#000000"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/notepad_menu_help"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:text="Help"
+            android:textColor="#000000"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Separator Line -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#D0CCC0" />
+
+    <!-- Text Area Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginLeft="2dp"
+        android:layout_marginRight="2dp"
+        android:layout_marginTop="2dp"
+        android:background="@drawable/edit_border"
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/notepad_editor"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@null"
+            android:gravity="top|start"
+            android:inputType="textMultiLine|textNoSuggestions"
+            android:padding="8dp"
+            android:scrollbars="vertical"
+            android:textColor="#000000"
+            android:textSize="13sp"
+            android:typeface="monospace" />
+    </LinearLayout>
+
+    <!-- Status Bar Top Border -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#A09E95" />
+
+    <!-- Status Bar -->
+    <LinearLayout
+        android:id="@+id/notepad_status_bar"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:background="#ECE9D8"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp">
+
+        <TextView
+            android:id="@+id/notepad_status_encoding"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Windows (CRLF)  |  UTF-8"
+            android:textColor="#555555"
+            android:textSize="10sp" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="12dp"
+            android:layout_marginLeft="6dp"
+            android:layout_marginRight="6dp"
+            android:background="#B0AEA5" />
+
+        <TextView
+            android:id="@+id/notepad_status_pos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ln 1, Col 1"
+            android:textColor="#333333"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+</LinearLayout>
