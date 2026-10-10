@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Windows XP Luna Palette -->
+    <color name="luna_blue_start">#0055EA</color>
+    <color name="luna_blue_mid">#0038A8</color>
+    <color name="luna_blue_end">#00138C</color>
+    
+    <color name="luna_inactive_start">#7A96DF</color>
+    <color name="luna_inactive_end">#5A70B2</color>
+
+    <color name="window_frame_outer">#00138C</color>
+    <color name="window_frame_inner">#ECE9D8</color>
+    <color name="window_background">#FFFFFF</color>
+    <color name="dialog_background">#ECE9D8</color>
+
+    <color name="taskbar_blue">#245EDC</color>
+    <color name="start_green">#3C9E35</color>
+</resources>

@@ -5,7 +5,7 @@ set -e
 # Usage: ./build_apk.sh <app_dir> <output_apk>
 
 APP_DIR="$1"
-OUTPUT_APK="$2"
+OUTPUT_APK="$(readlink -f "$2" 2>/dev/null || realpath "$2" 2>/dev/null || echo "$PWD/$2")"
 
 if [ -z "$APP_DIR" ] || [ -z "$OUTPUT_APK" ]; then
     echo "Usage: $0 <app_dir> <output_apk>"
