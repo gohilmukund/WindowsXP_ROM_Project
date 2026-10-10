@@ -33,7 +33,7 @@ JAVA_FILES=$(find build/gen src -name "*.java" 2>/dev/null)
 javac -source 1.8 -target 1.8 -bootclasspath "$ANDROID_JAR" -cp "$ANDROID_JAR" -d build/bin/classes $JAVA_FILES
 
 echo "[3/5] Dexing bytecodes with D8..."
-java -cp "$R8_JAR" com.android.tools.r8.D8 --min-api 19 --output build/bin $(find build/bin/classes -name "*.class")
+java -cp "$R8_JAR" com.android.tools.r8.D8 --min-api 19 --lib "$ANDROID_JAR" --output build/bin $(find build/bin/classes -name "*.class")
 
 echo "[4/5] Packaging APK with aapt..."
 cd build/bin

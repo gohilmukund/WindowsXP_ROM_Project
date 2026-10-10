@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.WindowsXP" parent="@android:style/Theme.NoTitleBar.Fullscreen">
+        <item name="android:windowBackground">@drawable/bliss_wallpaper</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+    </style>
+</resources>

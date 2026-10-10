@@ -1,0 +1,610 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_desktop"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bliss_wallpaper">
+
+    <!-- Desktop Icons Grid (Left side) -->
+    <LinearLayout
+        android:id="@+id/desktop_icons_container"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="36dp"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <!-- Column 1 -->
+        <LinearLayout
+            android:layout_width="88dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/icon_my_computer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/desktop_icon_selector"
+                android:clickable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="6dp">
+
+                <ImageView
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_my_computer" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    android:shadowColor="#FF000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="My Computer"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/icon_my_documents"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/desktop_icon_selector"
+                android:clickable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="6dp">
+
+                <ImageView
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_my_documents" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    android:shadowColor="#FF000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="My Documents"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/icon_internet_explorer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/desktop_icon_selector"
+                android:clickable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="6dp">
+
+                <ImageView
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_internet_explorer" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    android:shadowColor="#FF000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="Internet Explorer"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/icon_recycle_bin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/desktop_icon_selector"
+                android:clickable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="6dp">
+
+                <ImageView
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_recycle_bin" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    android:shadowColor="#FF000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="Recycle Bin"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Column 2 -->
+        <LinearLayout
+            android:layout_width="88dp"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="6dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/icon_wmp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/desktop_icon_selector"
+                android:clickable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="6dp">
+
+                <ImageView
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_wmp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    android:shadowColor="#FF000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="Media Player"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/icon_fotoo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/desktop_icon_selector"
+                android:clickable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="6dp">
+
+                <ImageView
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_fotoo" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    android:shadowColor="#FF000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="Fotoo Frame"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/icon_paint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/desktop_icon_selector"
+                android:clickable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="6dp">
+
+                <ImageView
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_paint" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    android:shadowColor="#FF000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="Paint"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/icon_notepad"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/desktop_icon_selector"
+                android:clickable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="6dp">
+
+                <ImageView
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_notepad" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    android:shadowColor="#FF000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="Notepad"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/icon_games"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/desktop_icon_selector"
+                android:clickable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="6dp">
+
+                <ImageView
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_games" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    android:shadowColor="#FF000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="Games"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Start Menu Popup (Bottom-Left) -->
+    <LinearLayout
+        android:id="@+id/start_menu_container"
+        android:layout_width="380dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|left"
+        android:layout_marginBottom="32dp"
+        android:background="#FFFFFF"
+        android:clickable="true"
+        android:elevation="10dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <!-- Top Header: User Profile -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/start_menu_header"
+            android:gravity="center_vertical"
+            android:paddingLeft="12dp">
+
+            <ImageView
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:src="@drawable/ic_my_computer" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:shadowColor="#80000000"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:shadowRadius="2"
+                android:text="Administrator"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Two Column Menu Body -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="320dp"
+            android:orientation="horizontal">
+
+            <!-- Left Column: Frequent Apps -->
+            <LinearLayout
+                android:layout_width="200dp"
+                android:layout_height="match_parent"
+                android:background="#FFFFFF"
+                android:orientation="vertical"
+                android:padding="6dp">
+
+                <LinearLayout
+                    android:id="@+id/sm_item_ie"
+                    android:layout_width="match_parent"
+                    android:layout_height="42dp"
+                    android:clickable="true"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="6dp">
+                    <ImageView android:layout_width="28dp" android:layout_height="28dp" android:src="@drawable/ic_internet_explorer" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:text="Internet Explorer" android:textColor="#000000" android:textStyle="bold" android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/sm_item_wmp"
+                    android:layout_width="match_parent"
+                    android:layout_height="42dp"
+                    android:clickable="true"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="6dp">
+                    <ImageView android:layout_width="28dp" android:layout_height="28dp" android:src="@drawable/ic_wmp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:text="Media Player" android:textColor="#000000" android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/sm_item_paint"
+                    android:layout_width="match_parent"
+                    android:layout_height="42dp"
+                    android:clickable="true"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="6dp">
+                    <ImageView android:layout_width="28dp" android:layout_height="28dp" android:src="@drawable/ic_paint" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:text="Paint" android:textColor="#000000" android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/sm_item_notepad"
+                    android:layout_width="match_parent"
+                    android:layout_height="42dp"
+                    android:clickable="true"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="6dp">
+                    <ImageView android:layout_width="28dp" android:layout_height="28dp" android:src="@drawable/ic_notepad" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:text="Notepad" android:textColor="#000000" android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/sm_item_fotoo"
+                    android:layout_width="match_parent"
+                    android:layout_height="42dp"
+                    android:clickable="true"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="6dp">
+                    <ImageView android:layout_width="28dp" android:layout_height="28dp" android:src="@drawable/ic_fotoo" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:text="Fotoo Frame" android:textColor="#000000" android:textSize="12sp" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="#D0D0D0" />
+
+                <LinearLayout
+                    android:id="@+id/sm_item_all_programs"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:clickable="true"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="6dp">
+                    <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_games" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:text="All Programs ▶" android:textColor="#000000" android:textStyle="bold" android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Right Column: System Places -->
+            <LinearLayout
+                android:layout_width="180dp"
+                android:layout_height="match_parent"
+                android:background="#D3E5FA"
+                android:orientation="vertical"
+                android:padding="6dp">
+
+                <LinearLayout
+                    android:id="@+id/sm_item_my_docs"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:clickable="true"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="6dp">
+                    <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_my_documents" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:text="My Documents" android:textColor="#00156E" android:textStyle="bold" android:textSize="11sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/sm_item_my_pics"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:clickable="true"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="6dp">
+                    <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_fotoo" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:text="My Pictures" android:textColor="#00156E" android:textStyle="bold" android:textSize="11sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/sm_item_my_comp"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:clickable="true"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="6dp">
+                    <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_my_computer" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:text="My Computer" android:textColor="#00156E" android:textStyle="bold" android:textSize="11sp" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="6dp"
+                    android:background="#B5CFF5" />
+
+                <LinearLayout
+                    android:id="@+id/sm_item_control_panel"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:clickable="true"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="6dp">
+                    <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_control_panel" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:text="Control Panel" android:textColor="#00156E" android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Bottom Bar: Log Off & Turn Off Computer -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="@drawable/start_menu_bottom"
+            android:gravity="center_vertical|right"
+            android:paddingRight="12dp">
+
+            <LinearLayout
+                android:id="@+id/btn_sm_logoff"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:gravity="center_vertical"
+                android:padding="4dp">
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_logoff" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="4dp" android:text="Log Off" android:textColor="#FFFFFF" android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btn_sm_shutdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:clickable="true"
+                android:gravity="center_vertical"
+                android:padding="4dp">
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_shutdown" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="4dp" android:text="Turn Off Computer" android:textColor="#FFFFFF" android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Taskbar (Docked at bottom) -->
+    <LinearLayout
+        android:id="@+id/taskbar"
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/taskbar_bg"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Green Start Button -->
+        <LinearLayout
+            android:id="@+id/btn_start"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:background="@drawable/start_button_bg"
+            android:clickable="true"
+            android:gravity="center_vertical"
+            android:paddingLeft="10dp">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_win_flag" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="6dp"
+                android:shadowColor="#40000000"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:shadowRadius="1"
+                android:text="start"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold|italic" />
+        </LinearLayout>
+
+        <!-- Active Window Tabs Container -->
+        <HorizontalScrollView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/taskbar_tabs_container"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="6dp"
+                android:paddingRight="6dp" />
+        </HorizontalScrollView>
+
+        <!-- System Notification Tray -->
+        <LinearLayout
+            android:id="@+id/system_tray"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@drawable/tray_bg"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="10dp"
+            android:paddingRight="12dp">
+
+            <TextView
+                android:id="@+id/tray_battery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="100%"
+                android:textColor="#C5D9F8"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/tray_clock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:text="12:00 PM"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+</FrameLayout>
