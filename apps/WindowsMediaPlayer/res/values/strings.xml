@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Windows Media Player</string>
+    <color name="wmp_bg">#A0B4D0</color>
+</resources>

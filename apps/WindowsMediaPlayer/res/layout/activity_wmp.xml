@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/wmp_skin_bg"
+    android:orientation="vertical">
+
+    <!-- Title Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="28dp"
+        android:background="@drawable/titlebar_bg"
+        android:gravity="center_vertical"
+        android:paddingLeft="6dp"
+        android:paddingRight="6dp">
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_wmp" />
+
+        <TextView
+            android:id="@+id/wmp_title_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="6dp"
+            android:layout_weight="1"
+            android:shadowColor="#80000000"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="1"
+            android:text="Windows Media Player"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/wmp_btn_minimize"
+            android:layout_width="21dp"
+            android:layout_height="21dp"
+            android:background="@drawable/ie_btn_min_max_bg"
+            android:gravity="center"
+            android:text="–"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/wmp_btn_maximize"
+            android:layout_width="21dp"
+            android:layout_height="21dp"
+            android:layout_marginLeft="2dp"
+            android:background="@drawable/ie_btn_min_max_bg"
+            android:gravity="center"
+            android:text="口"
+            android:textColor="#FFFFFF"
+            android:textSize="9sp" />
+
+        <Button
+            android:id="@+id/wmp_btn_close"
+            android:layout_width="21dp"
+            android:layout_height="21dp"
+            android:layout_marginLeft="2dp"
+            android:background="@drawable/ie_btn_close_bg"
+            android:gravity="center"
+            android:text="✕"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Main Viewport + Playlist -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:padding="6dp">
+
+        <!-- Visualizer Screen Frame -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/wmp_screen_bg"
+            android:padding="2dp">
+
+            <com.windows.xp.wmp.VisualizerView
+                android:id="@+id/wmp_visualizer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </FrameLayout>
+
+        <!-- Playlist Panel -->
+        <LinearLayout
+            android:layout_width="240dp"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="6dp"
+            android:background="#D6E2F0"
+            android:orientation="vertical"
+            android:padding="4dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="22dp"
+                android:background="#9BB4D4"
+                android:gravity="center_vertical"
+                android:paddingLeft="6dp"
+                android:text="Now Playing List"
+                android:textColor="#08204D"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <ListView
+                android:id="@+id/wmp_playlist"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:divider="#B0C8E8"
+                android:dividerHeight="1dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Bottom Metallic Transport Deck -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:background="@drawable/wmp_controls_bg"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp">
+
+        <!-- Seek Slider & Timestamps -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/wmp_time_current"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="#08204D"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/wmp_seekbar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:max="100" />
+
+            <TextView
+                android:id="@+id/wmp_time_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="#08204D"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Transport Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/wmp_btn_prev"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:clickable="true"
+                android:src="@drawable/ic_prev" />
+
+            <ImageView
+                android:id="@+id/wmp_btn_stop"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginLeft="14dp"
+                android:clickable="true"
+                android:src="@drawable/ic_stop" />
+
+            <!-- Circular Play Button -->
+            <FrameLayout
+                android:id="@+id/wmp_btn_play_container"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginLeft="14dp"
+                android:background="@drawable/wmp_btn_play_bg"
+                android:clickable="true">
+
+                <ImageView
+                    android:id="@+id/wmp_btn_play_icon"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_play" />
+            </FrameLayout>
+
+            <ImageView
+                android:id="@+id/wmp_btn_next"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginLeft="14dp"
+                android:clickable="true"
+                android:src="@drawable/ic_next" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>
