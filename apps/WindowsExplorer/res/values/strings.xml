@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Windows Explorer</string>
+    <string name="my_computer">My Computer</string>
+    <string name="local_disk_c">Local Disk (C:)</string>
+    <string name="removable_disk_d">Removable Disk (D:)</string>
+    <string name="system_drive_s">System Partition (S:)</string>
+    <string name="my_documents">My Documents</string>
+    <string name="my_pictures">My Pictures</string>
+    <string name="my_music">My Music</string>
+    <string name="downloads">Downloads</string>
+    <string name="address_label">Address</string>
+    <string name="go_button">Go</string>
+    <string name="system_tasks">System Tasks</string>
+    <string name="other_places">Other Places</string>
+    <string name="details">Details</string>
+    <string name="file_folder">File Folder</string>
+    <string name="new_folder">New Folder</string>
+    <string name="delete">Delete</string>
+    <string name="rename">Rename</string>
+</resources>
