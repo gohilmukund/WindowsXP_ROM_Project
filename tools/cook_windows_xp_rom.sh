@@ -140,7 +140,7 @@ chown root:root "$MNT/media/audio/ui/PowerOn.ogg"
 echo "[6/8] Applying build.prop optimizations and branding..."
 sed -i '/qemu.hw.mainkeys/d' "$MNT/build.prop"
 sed -i '/persist.sys.theme/d' "$MNT/build.prop"
-sed -i '/ro.build.display.id=/c\ro.build.display.id=Windows XP Professional Luna Edition (v1.0)' "$MNT/build.prop"
+sed -i '/ro.build.display.id=/c\ro.build.display.id=Windows XP Professional Luna Edition (v1.2)' "$MNT/build.prop"
 sed -i '/ro.product.model=/c\ro.product.model=Galaxy Tab 3 - Windows XP Edition' "$MNT/build.prop"
 
 cat "$SRC_DIR/assets/tweaks/build.prop.append" >> "$MNT/build.prop"
@@ -169,7 +169,7 @@ cp -a "$MNT/." "$TWRP_STAGE/system/"
 cat << 'EOF' > "$TWRP_STAGE/META-INF/com/google/android/updater-script"
 ui_print(" ");
 ui_print("============================================");
-ui_print(" Windows XP Professional Luna Edition v1.1  ");
+ui_print(" Windows XP Professional Luna Edition v1.2  ");
 ui_print("      Samsung Galaxy Tab 3 7.0 SM-T210      ");
 ui_print("============================================");
 ui_print(" ");
@@ -200,7 +200,7 @@ ui_print("============================================");
 ui_print(" ");
 EOF
 
-TWRP_ZIP="$OUT_DIR/WindowsXP_Tab3_Luna_v1.1_TWRP.zip"
+TWRP_ZIP="$OUT_DIR/WindowsXP_Tab3_Luna_v1.2_TWRP.zip"
 echo "  Packaging TWRP ZIP (this may take 1-2 minutes)..."
 (cd "$TWRP_STAGE" && zip -r9 -q "$TWRP_ZIP" .)
 echo "  TWRP ZIP created: $(ls -lh "$TWRP_ZIP" | awk '{print $5}')"
@@ -214,11 +214,11 @@ echo "  Converting raw ext4 image to Android sparse image..."
 img2simg "$WORK_DIR/system.raw.img" "$WORK_DIR/system.img"
 echo "  Sparse system.img created: $(ls -lh "$WORK_DIR/system.img" | awk '{print $5}')"
 
-ODIN_TAR="$OUT_DIR/WindowsXP_Tab3_Luna_v1.1_Odin.tar"
-ODIN_MD5="$OUT_DIR/WindowsXP_Tab3_Luna_v1.1_Odin.tar.md5"
+ODIN_TAR="$OUT_DIR/WindowsXP_Tab3_Luna_v1.2_Odin.tar"
+ODIN_MD5="$OUT_DIR/WindowsXP_Tab3_Luna_v1.2_Odin.tar.md5"
 
 (cd "$WORK_DIR" && tar -H ustar -cf "$ODIN_TAR" boot.img system.img)
-(cd "$OUT_DIR" && md5sum -t "WindowsXP_Tab3_Luna_v1.1_Odin.tar" >> "$ODIN_TAR")
+(cd "$OUT_DIR" && md5sum -t "WindowsXP_Tab3_Luna_v1.2_Odin.tar" >> "$ODIN_TAR")
 mv "$ODIN_TAR" "$ODIN_MD5"
 echo "  Odin TAR.MD5 created: $(ls -lh "$ODIN_MD5" | awk '{print $5}')"
 
@@ -233,8 +233,8 @@ echo "=========================================================="
 echo " Master ROM Cooking and Packaging Completed Successfully! "
 echo "=========================================================="
 echo "Deliverables:"
-echo "  1. TWRP: $ROMS_DIR/WindowsXP_Tab3_Luna_v1.1_TWRP.zip"
-echo "  2. Odin: $ROMS_DIR/WindowsXP_Tab3_Luna_v1.1_Odin.tar.md5"
+echo "  1. TWRP: $ROMS_DIR/WindowsXP_Tab3_Luna_v1.2_TWRP.zip"
+echo "  2. Odin: $ROMS_DIR/WindowsXP_Tab3_Luna_v1.2_Odin.tar.md5"
 ls -lh "$WINDOWS_DIST"
 md5sum "$WINDOWS_DIST"/*
 

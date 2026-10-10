@@ -1,6 +1,7 @@
 package com.windows.xp.launcher.window;
 
 import android.content.Context;
+import android.graphics.drawable.GradientDrawable;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.Typeface;
@@ -17,8 +18,9 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.windows.xp.launcher.R;
+import com.windows.xp.launcher.theme.ThemeManager;
 
-public class WindowFrameView extends RelativeLayout {
+public class WindowFrameView extends RelativeLayout implements ThemeManager.OnThemeChangeListener {
 
     public interface WindowListener {
         void onWindowFocus(WindowFrameView window);
@@ -165,6 +167,8 @@ public class WindowFrameView extends RelativeLayout {
         addView(resizeGrip);
 
         setupListeners();
+        ThemeManager.getInstance().addListener(this);
+        applyThemeStyle();
     }
 
     private void setupListeners() {
@@ -298,11 +302,18 @@ public class WindowFrameView extends RelativeLayout {
     }
 
     public String getTitle() {
-        return tvTitle.getText().toString();
+        return tvTitle != null ? tvTitle.getText().toString() : "";
     }
 
+    private int iconRes = R.drawable.ic_my_computer;
+
     public void setIcon(int resId) {
+        this.iconRes = resId;
         imgIcon.setImageResource(resId);
+    }
+
+    public int getIconRes() {
+        return iconRes;
     }
 
     public void setWindowContent(View view) {
@@ -313,11 +324,35 @@ public class WindowFrameView extends RelativeLayout {
 
     public void setActive(boolean active) {
         this.isActive = active;
-        if (active) {
-            titleBar.setBackgroundResource(R.drawable.luna_titlebar_active);
+        applyThemeStyle();
+    }
+
+    @Override
+    public void onThemeChanged(ThemeManager.Theme newTheme) {
+        applyThemeStyle();
+    }
+
+    public void applyThemeStyle() {
+        ThemeManager tm = ThemeManager.getInstance();
+        GradientDrawable gd;
+        if (isActive) {
+            gd = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+                    new int[]{tm.getTitlebarActiveStart(), tm.getTitlebarActiveEnd()});
         } else {
-            titleBar.setBackgroundResource(R.drawable.luna_titlebar_inactive);
+            gd = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+                    new int[]{tm.getTitlebarInactiveStart(), tm.getTitlebarInactiveEnd()});
         }
+        gd.setCornerRadii(new float[]{dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4), 0, 0, 0, 0});
+        titleBar.setBackgroundDrawable(gd);
+        if (tvTitle != null) {
+            tvTitle.setTextColor(tm.getTitlebarTextColor());
+        }
+
+        GradientDrawable border = new GradientDrawable();
+        border.setStroke(dpToPx(3), tm.getWindowBorderColor());
+        border.setColor(Color.TRANSPARENT);
+        border.setCornerRadius(dpToPx(4));
+        setBackgroundDrawable(border);
     }
 
     public boolean isActive() {
@@ -380,6 +415,7 @@ public class WindowFrameView extends RelativeLayout {
     }
 
     public void close() {
+        ThemeManager.getInstance().removeListener(this);
         if (listener != null) {
             listener.onWindowClose(this);
         }

@@ -1,26 +1,32 @@
 package com.windows.xp.launcher.window;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.util.AttributeSet;
-import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.BaseAdapter;
+import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.windows.xp.launcher.R;
+import com.windows.xp.launcher.explorer.fs.FileOperationsManager;
+import com.windows.xp.launcher.explorer.fs.MimeTypeResolver;
+import com.windows.xp.launcher.explorer.model.FileItem;
+import com.windows.xp.launcher.explorer.ui.FileAdapter;
+import com.windows.xp.launcher.explorer.ui.TaskPaneController;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Stack;
 
@@ -30,13 +36,33 @@ public class ExplorerWindowView extends LinearLayout {
         void onOpenTextFile(File file);
     }
 
-    private TextView tvAddress;
-    private GridView gridFiles;
-    private FileAdapter adapter;
+    public interface OnTitleChangeListener {
+        void onTitleChange(String title, int iconRes);
+    }
 
-    private String currentPath = "computer://";
-    private final Stack<String> backStack = new Stack<>();
+    private EditText etAddress;
+    private GridView gridFiles;
+    private ListView listFiles;
+    private TextView tvEmpty;
+    private View scrollTaskPane;
+    private TextView tvStatusLeft;
+    private TextView tvStatusRight;
+    private ImageView imgTbBack;
+    private ImageView imgTbForward;
+
+    private FileOperationsManager fileManager;
+    private FileAdapter fileAdapter;
+    private TaskPaneController taskPaneController;
+
+    private final Stack<String> backStack = new Stack<String>();
+    private final Stack<String> forwardStack = new Stack<String>();
+    private String currentPath = FileOperationsManager.VIRTUAL_MY_COMPUTER;
+
+    private long lastClickTime = 0;
+    private int lastClickPosition = -1;
+
     private FileActionListener fileActionListener;
+    private OnTitleChangeListener titleChangeListener;
 
     public ExplorerWindowView(Context context) {
         super(context);
@@ -52,300 +78,402 @@ public class ExplorerWindowView extends LinearLayout {
         this.fileActionListener = l;
     }
 
-    private void init(final Context context) {
+    public void setOnTitleChangeListener(OnTitleChangeListener l) {
+        this.titleChangeListener = l;
+    }
+
+    private void init(Context context) {
         setOrientation(VERTICAL);
-        setBackgroundColor(Color.WHITE);
+        LayoutInflater.from(context).inflate(R.layout.view_explorer_window, this, true);
 
-        // 1. Navigation Toolbar (Back, Up, Address Bar)
-        LinearLayout toolbar = new LinearLayout(context);
-        toolbar.setOrientation(HORIZONTAL);
-        toolbar.setBackgroundColor(0xFFECE9D8);
-        toolbar.setGravity(Gravity.CENTER_VERTICAL);
-        toolbar.setPadding(dpToPx(6), dpToPx(3), dpToPx(6), dpToPx(3));
+        fileManager = new FileOperationsManager();
+        fileAdapter = new FileAdapter(context);
 
-        TextView btnBack = createNavButton(context, "◀ Back");
-        TextView btnUp = createNavButton(context, "▲ Up");
+        initViews();
+        setupToolbar();
+        setupTaskPane();
+        setupLists();
 
-        btnBack.setOnClickListener(new OnClickListener() {
+        navigateTo(FileOperationsManager.VIRTUAL_MY_COMPUTER, false);
+    }
+
+    private void initViews() {
+        etAddress = (EditText) findViewById(R.id.et_address);
+        gridFiles = (GridView) findViewById(R.id.grid_files);
+        listFiles = (ListView) findViewById(R.id.list_files);
+        tvEmpty = (TextView) findViewById(R.id.tv_empty);
+        scrollTaskPane = findViewById(R.id.scroll_taskpane);
+
+        tvStatusLeft = (TextView) findViewById(R.id.tv_status_left);
+        tvStatusRight = (TextView) findViewById(R.id.tv_status_right);
+        imgTbBack = (ImageView) findViewById(R.id.img_tb_back);
+        imgTbForward = (ImageView) findViewById(R.id.img_tb_forward);
+    }
+
+    private void setupToolbar() {
+        findViewById(R.id.btn_tb_back).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!backStack.isEmpty()) {
-                    navigateTo(backStack.pop(), false);
+                goBack();
+            }
+        });
+
+        findViewById(R.id.btn_tb_forward).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                goForward();
+            }
+        });
+
+        findViewById(R.id.btn_tb_up).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                goUp();
+            }
+        });
+
+        findViewById(R.id.btn_tb_folders).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (scrollTaskPane.getVisibility() == View.VISIBLE) {
+                    scrollTaskPane.setVisibility(View.GONE);
+                } else {
+                    scrollTaskPane.setVisibility(View.VISIBLE);
                 }
             }
         });
 
-        btnUp.setOnClickListener(new OnClickListener() {
+        findViewById(R.id.btn_tb_views).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                navigateUp();
+                toggleViewMode();
             }
         });
 
-        toolbar.addView(btnBack);
-        toolbar.addView(btnUp);
-
-        // Address Bar
-        TextView lblAddress = new TextView(context);
-        lblAddress.setText("Address: ");
-        lblAddress.setTextColor(0xFF555555);
-        lblAddress.setTextSize(11);
-        lblAddress.setPadding(dpToPx(6), 0, dpToPx(2), 0);
-        toolbar.addView(lblAddress);
-
-        tvAddress = new TextView(context);
-        LayoutParams addrParams = new LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
-        tvAddress.setLayoutParams(addrParams);
-        tvAddress.setBackgroundColor(Color.WHITE);
-        tvAddress.setTextColor(Color.BLACK);
-        tvAddress.setTextSize(11);
-        tvAddress.setPadding(dpToPx(6), dpToPx(2), dpToPx(6), dpToPx(2));
-        tvAddress.setSingleLine(true);
-        toolbar.addView(tvAddress);
-
-        addView(toolbar);
-
-        // Divider
-        View div = new View(context);
-        div.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        div.setBackgroundColor(0xFFD0D0D0);
-        addView(div);
-
-        // 2. Main Two-Pane Body
-        LinearLayout body = new LinearLayout(context);
-        body.setOrientation(HORIZONTAL);
-        LayoutParams bodyParams = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f);
-        body.setLayoutParams(bodyParams);
-
-        // Left Pane: Other Places Links
-        LinearLayout leftPane = new LinearLayout(context);
-        leftPane.setOrientation(VERTICAL);
-        leftPane.setLayoutParams(new LayoutParams(dpToPx(140), ViewGroup.LayoutParams.MATCH_PARENT));
-        leftPane.setBackgroundColor(0xFF7A96DF);
-        leftPane.setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8));
-
-        TextView tvHeader = new TextView(context);
-        tvHeader.setText("Other Places");
-        tvHeader.setTextColor(Color.WHITE);
-        tvHeader.setTextSize(11);
-        tvHeader.setTypeface(null, android.graphics.Typeface.BOLD);
-        leftPane.addView(tvHeader);
-
-        leftPane.addView(createPlaceLink(context, "My Computer", "computer://"));
-        leftPane.addView(createPlaceLink(context, "Local Disk (C:)", "/sdcard"));
-        leftPane.addView(createPlaceLink(context, "My Documents", "/sdcard/Documents"));
-        leftPane.addView(createPlaceLink(context, "My Pictures", "/sdcard/Pictures"));
-
-        body.addView(leftPane);
-
-        // Right Pane: Grid of Files & Folders
-        gridFiles = new GridView(context);
-        LayoutParams gridParams = new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f);
-        gridFiles.setLayoutParams(gridParams);
-        gridFiles.setNumColumns(3);
-        gridFiles.setVerticalSpacing(dpToPx(8));
-        gridFiles.setHorizontalSpacing(dpToPx(8));
-        gridFiles.setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8));
-        gridFiles.setBackgroundColor(Color.WHITE);
-
-        adapter = new FileAdapter(context);
-        gridFiles.setAdapter(adapter);
-
-        body.addView(gridFiles);
-        addView(body);
-
-        navigateTo("computer://", false);
-    }
-
-    private TextView createNavButton(Context context, String label) {
-        TextView tv = new TextView(context);
-        tv.setText(label);
-        tv.setTextColor(Color.BLACK);
-        tv.setTextSize(11);
-        tv.setBackgroundColor(0xFFE0DFD5);
-        tv.setPadding(dpToPx(6), dpToPx(2), dpToPx(6), dpToPx(2));
-        LayoutParams lp = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.rightMargin = dpToPx(4);
-        tv.setLayoutParams(lp);
-        tv.setClickable(true);
-        return tv;
-    }
-
-    private TextView createPlaceLink(final Context context, final String label, final String path) {
-        TextView tv = new TextView(context);
-        tv.setText("• " + label);
-        tv.setTextColor(0xFF00138C);
-        tv.setTextSize(11);
-        tv.setPadding(0, dpToPx(4), 0, dpToPx(4));
-        tv.setClickable(true);
-        tv.setOnClickListener(new OnClickListener() {
+        findViewById(R.id.btn_tb_newfolder).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+                promptNewFolder();
+            }
+        });
+
+        findViewById(R.id.btn_tb_delete).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                promptDelete();
+            }
+        });
+
+        findViewById(R.id.btn_go).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String input = etAddress.getText().toString().trim();
+                resolveAndNavigateAddress(input);
+            }
+        });
+
+        etAddress.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_GO ||
+                    (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                    String input = etAddress.getText().toString().trim();
+                    resolveAndNavigateAddress(input);
+                    return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    private void setupTaskPane() {
+        taskPaneController = new TaskPaneController(this, new TaskPaneController.OnTaskPaneActionListener() {
+            @Override
+            public void onNavigatePlace(String path) {
                 navigateTo(path, true);
             }
+
+            @Override
+            public void onNewFolderAction() {
+                promptNewFolder();
+            }
+
+            @Override
+            public void onSearchAction() {
+                Toast.makeText(getContext(), "Search companion: All local drives indexed.", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onViewSystemInfoAction() {
+                Toast.makeText(getContext(), "Opening System Properties...", Toast.LENGTH_SHORT).show();
+            }
         });
-        return tv;
+    }
+
+    private void setupLists() {
+        gridFiles.setAdapter(fileAdapter);
+        listFiles.setAdapter(fileAdapter);
+
+        AdapterView.OnItemClickListener itemClickListener = new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                handleItemClick(position);
+            }
+        };
+
+        gridFiles.setOnItemClickListener(itemClickListener);
+        listFiles.setOnItemClickListener(itemClickListener);
+    }
+
+    private void handleItemClick(int position) {
+        long now = System.currentTimeMillis();
+        boolean isDoubleClick = (position == lastClickPosition && (now - lastClickTime) < 600);
+        lastClickTime = now;
+        lastClickPosition = position;
+
+        fileAdapter.setSelectedPosition(position);
+        FileItem item = fileAdapter.getItem(position);
+        taskPaneController.updateDetails(item, currentPath.equals(FileOperationsManager.VIRTUAL_MY_COMPUTER) ? "My Computer" : new File(currentPath).getName());
+
+        // Single click immediately opens folders and drives for smooth tablet touch experience
+        if (item.isDirectory() || item.isDrive() || isDoubleClick) {
+            openItem(item);
+        }
+    }
+
+    private void openItem(FileItem item) {
+        if (item.isDirectory() || item.isDrive()) {
+            navigateTo(item.getPath(), true);
+        } else {
+            launchFile(item);
+        }
+    }
+
+    private void launchFile(FileItem item) {
+        File file = new File(item.getPath());
+        if (!file.exists()) {
+            Toast.makeText(getContext(), "File does not exist.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String ext = MimeTypeResolver.getExtension(file.getName()).toLowerCase();
+
+        if (ext.equals("txt") || ext.equals("log") || ext.equals("cfg") || ext.equals("ini") || ext.equals("bat")) {
+            if (fileActionListener != null) {
+                fileActionListener.onOpenTextFile(file);
+                return;
+            }
+        }
+
+        Intent launchIntent = null;
+        if (ext.equals("txt") || ext.equals("log") || ext.equals("cfg") || ext.equals("ini")) {
+            launchIntent = new Intent();
+            launchIntent.setClassName("com.windows.xp.notepad", "com.windows.xp.notepad.NotepadActivity");
+            launchIntent.setDataAndType(Uri.fromFile(file), "text/plain");
+        } else if (ext.equals("png") || ext.equals("jpg") || ext.equals("jpeg") || ext.equals("bmp") || ext.equals("gif")) {
+            launchIntent = new Intent();
+            launchIntent.setClassName("com.windows.xp.mspaint", "com.windows.xp.mspaint.MSPaintActivity");
+            launchIntent.setDataAndType(Uri.fromFile(file), "image/*");
+        } else if (ext.equals("mp3") || ext.equals("wav") || ext.equals("ogg") || ext.equals("m4a")) {
+            launchIntent = new Intent();
+            launchIntent.setClassName("com.windows.xp.wmp", "com.windows.xp.wmp.WMPActivity");
+            launchIntent.setDataAndType(Uri.fromFile(file), "audio/*");
+        } else if (ext.equals("apk")) {
+            launchIntent = new Intent(Intent.ACTION_VIEW);
+            launchIntent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive");
+            launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        } else {
+            launchIntent = new Intent(Intent.ACTION_VIEW);
+            launchIntent.setDataAndType(Uri.fromFile(file), MimeTypeResolver.getMimeType(file));
+        }
+
+        try {
+            getContext().startActivity(launchIntent);
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "No application found to open " + file.getName(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     public void navigateTo(String path, boolean pushBack) {
         if (pushBack && currentPath != null && !currentPath.equals(path)) {
             backStack.push(currentPath);
+            forwardStack.clear();
         }
         this.currentPath = path;
+        updateNavButtonsState();
 
-        if (path.equals("computer://")) {
-            tvAddress.setText("My Computer");
-            adapter.loadComputerDrives();
+        if (FileOperationsManager.VIRTUAL_MY_COMPUTER.equals(path)) {
+            loadMyComputer();
         } else {
-            String display = path.replace("/sdcard", "C:").replace('/', '\\');
-            tvAddress.setText(display);
-            adapter.loadDirectory(new File(path));
+            loadDirectory(new File(path));
         }
     }
 
-    private void navigateUp() {
-        if (currentPath.equals("computer://")) {
+    private void loadMyComputer() {
+        if (titleChangeListener != null) {
+            titleChangeListener.onTitleChange("My Computer", R.drawable.ic_my_computer);
+        }
+        etAddress.setText("My Computer");
+
+        List<FileItem> drives = fileManager.getDrives();
+        fileAdapter.setItems(drives);
+
+        tvEmpty.setVisibility(View.GONE);
+        tvStatusLeft.setText(drives.size() + " objects");
+
+        String freeC = fileManager.formatSize(fileManager.getDriveFreeSpace("/sdcard"));
+        tvStatusRight.setText("Free Space (C:): " + freeC);
+
+        taskPaneController.updateMyComputerContext();
+    }
+
+    private void loadDirectory(File dir) {
+        String title = dir.getName();
+        if (title.isEmpty()) title = dir.getAbsolutePath();
+        if (titleChangeListener != null) {
+            titleChangeListener.onTitleChange(title, R.drawable.ic_folder);
+        }
+
+        String winPath = fileManager.toWindowsPath(dir.getAbsolutePath());
+        etAddress.setText(winPath);
+
+        List<FileItem> items = fileManager.getDirectoryContents(dir);
+        fileAdapter.setItems(items);
+
+        if (items.isEmpty()) {
+            tvEmpty.setVisibility(View.VISIBLE);
+        } else {
+            tvEmpty.setVisibility(View.GONE);
+        }
+
+        tvStatusLeft.setText(items.size() + " objects");
+        long totalBytes = 0;
+        for (FileItem item : items) {
+            totalBytes += item.getSize();
+        }
+        tvStatusRight.setText("Folder Size: " + fileManager.formatSize(totalBytes));
+
+        taskPaneController.updateFolderContext(dir);
+    }
+
+    private void goBack() {
+        if (!backStack.isEmpty()) {
+            forwardStack.push(currentPath);
+            navigateTo(backStack.pop(), false);
+        }
+    }
+
+    private void goForward() {
+        if (!forwardStack.isEmpty()) {
+            backStack.push(currentPath);
+            navigateTo(forwardStack.pop(), false);
+        }
+    }
+
+    private void goUp() {
+        if (FileOperationsManager.VIRTUAL_MY_COMPUTER.equals(currentPath)) {
             return;
         }
+
         File f = new File(currentPath);
         File parent = f.getParentFile();
-        if (parent == null || currentPath.equals("/sdcard") || currentPath.equals("/storage/emulated/0")) {
-            navigateTo("computer://", true);
+
+        if (parent == null || currentPath.equals("/sdcard") || currentPath.equals("/storage/emulated/0") || currentPath.equals("/")) {
+            navigateTo(FileOperationsManager.VIRTUAL_MY_COMPUTER, true);
         } else {
             navigateTo(parent.getAbsolutePath(), true);
         }
     }
 
-    private int dpToPx(int dp) {
-        return (int) (dp * getResources().getDisplayMetrics().density + 0.5f);
+    private void updateNavButtonsState() {
+        imgTbBack.setAlpha(backStack.isEmpty() ? 0.35f : 1.0f);
+        imgTbForward.setAlpha(forwardStack.isEmpty() ? 0.35f : 1.0f);
     }
 
-    // Inner Item Model
-    private static class DisplayItem {
-        String name;
-        String path;
-        int iconRes;
-        boolean isDir;
-        boolean isDrive;
-
-        DisplayItem(String name, String path, int iconRes, boolean isDir, boolean isDrive) {
-            this.name = name;
-            this.path = path;
-            this.iconRes = iconRes;
-            this.isDir = isDir;
-            this.isDrive = isDrive;
+    private void toggleViewMode() {
+        if (gridFiles.getVisibility() == View.VISIBLE) {
+            gridFiles.setVisibility(View.GONE);
+            listFiles.setVisibility(View.VISIBLE);
+            fileAdapter.setViewMode(FileAdapter.VIEW_MODE_DETAILS);
+        } else {
+            listFiles.setVisibility(View.GONE);
+            gridFiles.setVisibility(View.VISIBLE);
+            fileAdapter.setViewMode(FileAdapter.VIEW_MODE_TILES);
         }
     }
 
-    // Inner Grid Adapter
-    private class FileAdapter extends BaseAdapter {
-        private final Context ctx;
-        private final List<DisplayItem> items = new ArrayList<>();
+    private void resolveAndNavigateAddress(String input) {
+        if (input.equalsIgnoreCase("My Computer") || input.equalsIgnoreCase("computer://")) {
+            navigateTo(FileOperationsManager.VIRTUAL_MY_COMPUTER, true);
+            return;
+        }
+        String resolved = fileManager.toAndroidPath(input);
+        File target = new File(resolved);
+        if (target.exists() && target.isDirectory()) {
+            navigateTo(target.getAbsolutePath(), true);
+        } else {
+            Toast.makeText(getContext(), "Cannot find '" + input + "'. Check the spelling and try again.", Toast.LENGTH_SHORT).show();
+        }
+    }
 
-        FileAdapter(Context ctx) {
-            this.ctx = ctx;
+    private void promptNewFolder() {
+        if (FileOperationsManager.VIRTUAL_MY_COMPUTER.equals(currentPath)) {
+            Toast.makeText(getContext(), "Cannot create folders in My Computer.", Toast.LENGTH_SHORT).show();
+            return;
         }
 
-        void loadComputerDrives() {
-            items.clear();
-            items.add(new DisplayItem("Local Disk (C:)", "/sdcard", R.drawable.ic_drive_c, true, true));
-            items.add(new DisplayItem("Removable Disk (D:)", "/storage/extSdCard", R.drawable.ic_drive_d, true, true));
-            items.add(new DisplayItem("System (S:)", "/system", R.drawable.ic_drive_system, true, true));
-            notifyDataSetChanged();
-        }
-
-        void loadDirectory(File dir) {
-            items.clear();
-            if (dir.exists() && dir.isDirectory()) {
-                File[] list = dir.listFiles();
-                if (list != null) {
-                    Arrays.sort(list, new Comparator<File>() {
-                        @Override
-                        public int compare(File a, File b) {
-                            if (a.isDirectory() && !b.isDirectory()) return -1;
-                            if (!a.isDirectory() && b.isDirectory()) return 1;
-                            return a.getName().compareToIgnoreCase(b.getName());
-                        }
-                    });
-
-                    for (File f : list) {
-                        int icon = R.drawable.ic_folder;
-                        if (!f.isDirectory()) {
-                            String n = f.getName().toLowerCase();
-                            if (n.endsWith(".txt") || n.endsWith(".log")) icon = R.drawable.ic_notepad;
-                            else if (n.endsWith(".png") || n.endsWith(".jpg")) icon = R.drawable.ic_paint;
-                            else if (n.endsWith(".mp3") || n.endsWith(".ogg")) icon = R.drawable.ic_wmp;
-                            else if (n.endsWith(".apk")) icon = R.drawable.ic_cmd;
-                            else icon = R.drawable.ic_folder;
-                        }
-                        items.add(new DisplayItem(f.getName(), f.getAbsolutePath(), icon, f.isDirectory(), false));
-                    }
-                }
-            }
-            notifyDataSetChanged();
-        }
-
-        @Override
-        public int getCount() { return items.size(); }
-        @Override
-        public Object getItem(int pos) { return items.get(pos); }
-        @Override
-        public long getItemId(int pos) { return pos; }
-
-        @Override
-        public View getView(int pos, View convertView, ViewGroup parent) {
-            LinearLayout v;
-            if (convertView == null) {
-                v = new LinearLayout(ctx);
-                v.setOrientation(VERTICAL);
-                v.setGravity(Gravity.CENTER);
-                v.setPadding(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
-
-                ImageView img = new ImageView(ctx);
-                img.setId(2001);
-                LayoutParams ip = new LayoutParams(dpToPx(40), dpToPx(40));
-                img.setLayoutParams(ip);
-                v.addView(img);
-
-                TextView tv = new TextView(ctx);
-                tv.setId(2002);
-                tv.setTextColor(Color.BLACK);
-                tv.setTextSize(11);
-                tv.setGravity(Gravity.CENTER);
-                tv.setSingleLine(true);
-                tv.setEllipsize(android.text.TextUtils.TruncateAt.END);
-                LayoutParams tp = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                tp.topMargin = dpToPx(2);
-                tv.setLayoutParams(tp);
-                v.addView(tv);
-            } else {
-                v = (LinearLayout) convertView;
-            }
-
-            final DisplayItem item = items.get(pos);
-            ImageView img = (ImageView) v.findViewById(2001);
-            TextView tv = (TextView) v.findViewById(2002);
-
-            img.setImageResource(item.iconRes);
-            tv.setText(item.name);
-
-            v.setOnClickListener(new OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (item.isDir || item.isDrive) {
-                        navigateTo(item.path, true);
-                    } else {
-                        // Open file
-                        if (item.name.toLowerCase().endsWith(".txt") && fileActionListener != null) {
-                            fileActionListener.onOpenTextFile(new File(item.path));
+        final EditText input = new EditText(getContext());
+        input.setHint("New Folder");
+        new AlertDialog.Builder(getContext())
+                .setTitle("New Folder")
+                .setMessage("Enter folder name:")
+                .setView(input)
+                .setPositiveButton("Create", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String name = input.getText().toString().trim();
+                        if (name.isEmpty()) name = "New Folder";
+                        boolean ok = fileManager.createFolder(currentPath, name);
+                        if (ok) {
+                            navigateTo(currentPath, false);
                         } else {
-                            Toast.makeText(ctx, "Opening " + item.name, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "Failed to create folder.", Toast.LENGTH_SHORT).show();
                         }
                     }
-                }
-            });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
 
-            return v;
+    private void promptDelete() {
+        int pos = fileAdapter.getSelectedPosition();
+        if (pos < 0 || pos >= fileAdapter.getCount()) {
+            Toast.makeText(getContext(), "Please select an item to delete.", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        final FileItem item = fileAdapter.getItem(pos);
+        if (item.isDrive()) {
+            Toast.makeText(getContext(), "Cannot delete system drives.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new AlertDialog.Builder(getContext())
+                .setTitle("Confirm File Delete")
+                .setMessage("Are you sure you want to send '" + item.getName() + "' to the Recycle Bin?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        boolean ok = fileManager.deleteFileOrFolder(new File(item.getPath()));
+                        if (ok) {
+                            Toast.makeText(getContext(), "Deleted " + item.getName(), Toast.LENGTH_SHORT).show();
+                            navigateTo(currentPath, false);
+                        } else {
+                            Toast.makeText(getContext(), "Cannot delete file: Permission denied.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                })
+                .setNegativeButton("No", null)
+                .show();
     }
 }

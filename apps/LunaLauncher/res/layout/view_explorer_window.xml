@@ -1,0 +1,604 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/luna_window_bg">
+
+    <!-- 1. Classic Menu Bar -->
+    <LinearLayout
+        android:id="@+id/layout_menubar"
+        android:layout_width="match_parent"
+        android:layout_height="22dp"
+        android:background="@color/luna_menubar_bg"
+        android:gravity="center_vertical"
+        android:paddingLeft="8dp">
+
+        <TextView
+            android:id="@+id/menu_file"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:text="File"
+            android:textColor="@color/luna_text_black"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/menu_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:text="Edit"
+            android:textColor="@color/luna_text_black"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/menu_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:text="View"
+            android:textColor="@color/luna_text_black"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/menu_favorites"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:text="Favorites"
+            android:textColor="@color/luna_text_black"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/menu_tools"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:text="Tools"
+            android:textColor="@color/luna_text_black"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/menu_help"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:text="Help"
+            android:textColor="@color/luna_text_black"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/luna_toolbar_border" />
+
+    <!-- 2. Standard Buttons Toolbar -->
+    <LinearLayout
+        android:id="@+id/layout_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="34dp"
+        android:background="@color/luna_toolbar_bg"
+        android:gravity="center_vertical"
+        android:paddingLeft="6dp">
+
+        <LinearLayout
+            android:id="@+id/btn_tb_back"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:clickable="true"
+            android:gravity="center_vertical"
+            android:paddingLeft="4dp"
+            android:paddingRight="6dp">
+            <ImageView
+                android:id="@+id/img_tb_back"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/tb_back" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="4dp"
+                android:text="Back"
+                android:textColor="@color/luna_text_black"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/btn_tb_forward"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:clickable="true"
+            android:gravity="center_vertical"
+            android:paddingLeft="4dp"
+            android:paddingRight="6dp">
+            <ImageView
+                android:id="@+id/img_tb_forward"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/tb_forward" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/btn_tb_up"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:clickable="true"
+            android:layout_marginLeft="4dp"
+            android:layout_marginRight="6dp"
+            android:src="@drawable/tb_up" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="20dp"
+            android:layout_marginRight="6dp"
+            android:background="@color/luna_toolbar_border" />
+
+        <LinearLayout
+            android:id="@+id/btn_tb_search"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:clickable="true"
+            android:gravity="center_vertical"
+            android:paddingLeft="4dp"
+            android:paddingRight="6dp">
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/tb_search" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="4dp"
+                android:text="Search"
+                android:textColor="@color/luna_text_black"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/btn_tb_folders"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:clickable="true"
+            android:gravity="center_vertical"
+            android:paddingLeft="4dp"
+            android:paddingRight="6dp">
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/tb_folders" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="4dp"
+                android:text="Folders"
+                android:textColor="@color/luna_text_black"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/btn_tb_views"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:clickable="true"
+            android:gravity="center_vertical"
+            android:paddingLeft="4dp"
+            android:paddingRight="6dp">
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/tb_views" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="4dp"
+                android:text="Views"
+                android:textColor="@color/luna_text_black"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="20dp"
+            android:layout_marginRight="6dp"
+            android:background="@color/luna_toolbar_border" />
+
+        <ImageView
+            android:id="@+id/btn_tb_newfolder"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:clickable="true"
+            android:layout_marginRight="8dp"
+            android:src="@drawable/tb_newfolder" />
+
+        <ImageView
+            android:id="@+id/btn_tb_delete"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:clickable="true"
+            android:src="@drawable/tb_delete" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/luna_toolbar_border" />
+
+    <!-- 3. Address Bar -->
+    <LinearLayout
+        android:id="@+id/layout_addressbar"
+        android:layout_width="match_parent"
+        android:layout_height="26dp"
+        android:background="@color/luna_toolbar_bg"
+        android:gravity="center_vertical"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/address_label"
+            android:textColor="#555555"
+            android:textSize="11sp" />
+
+        <EditText
+            android:id="@+id/et_address"
+            android:layout_width="0dp"
+            android:layout_height="22dp"
+            android:layout_weight="1"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="6dp"
+            android:background="#FFFFFF"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:singleLine="true"
+            android:textColor="#000000"
+            android:textSize="11sp" />
+
+        <LinearLayout
+            android:id="@+id/btn_go"
+            android:layout_width="wrap_content"
+            android:layout_height="22dp"
+            android:clickable="true"
+            android:background="@color/luna_toolbar_bg"
+            android:gravity="center_vertical"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp">
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/tb_go" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="3dp"
+                android:text="@string/go_button"
+                android:textColor="@color/luna_text_black"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/luna_toolbar_border" />
+
+    <!-- 4. Main Explorer Content: Left Task Pane + Right Explorer Pane -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <!-- Left Task Pane (190dp) -->
+        <ScrollView
+            android:id="@+id/scroll_taskpane"
+            android:layout_width="190dp"
+            android:layout_height="match_parent"
+            android:background="@color/luna_taskpane_bg"
+            android:padding="6dp">
+
+            <LinearLayout
+                android:id="@+id/task_pane_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- System Tasks Card -->
+                <LinearLayout
+                    android:id="@+id/card_system_tasks"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:orientation="vertical">
+
+                    <RelativeLayout
+                        android:id="@+id/header_system_tasks"
+                        android:layout_width="match_parent"
+                        android:layout_height="22dp"
+                        android:background="@drawable/task_card_header_bg"
+                        android:paddingLeft="6dp"
+                        android:paddingRight="6dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:text="@string/system_tasks"
+                            android:textColor="@color/luna_task_header_title"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+
+                    <LinearLayout
+                        android:id="@+id/body_system_tasks"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/task_card_body_bg"
+                        android:orientation="vertical"
+                        android:padding="5dp">
+
+                        <TextView
+                            android:id="@+id/action_view_system_info"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:paddingTop="2dp"
+                            android:paddingBottom="2dp"
+                            android:text="• View system info"
+                            android:textColor="@color/luna_task_link_text"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/action_new_folder"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:paddingTop="2dp"
+                            android:paddingBottom="2dp"
+                            android:text="• Make a new folder"
+                            android:textColor="@color/luna_task_link_text"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/action_search_files"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:paddingTop="2dp"
+                            android:paddingBottom="2dp"
+                            android:text="• Search for files"
+                            android:textColor="@color/luna_task_link_text"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Other Places Card -->
+                <LinearLayout
+                    android:id="@+id/card_other_places"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:orientation="vertical">
+
+                    <RelativeLayout
+                        android:id="@+id/header_other_places"
+                        android:layout_width="match_parent"
+                        android:layout_height="22dp"
+                        android:background="@drawable/task_card_header_bg"
+                        android:paddingLeft="6dp"
+                        android:paddingRight="6dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:text="@string/other_places"
+                            android:textColor="@color/luna_task_header_title"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+
+                    <LinearLayout
+                        android:id="@+id/body_other_places"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/task_card_body_bg"
+                        android:orientation="vertical"
+                        android:padding="5dp">
+
+                        <TextView
+                            android:id="@+id/place_my_computer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:paddingTop="2dp"
+                            android:paddingBottom="2dp"
+                            android:text="• My Computer"
+                            android:textColor="@color/luna_task_link_text"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/place_my_documents"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:paddingTop="2dp"
+                            android:paddingBottom="2dp"
+                            android:text="• My Documents"
+                            android:textColor="@color/luna_task_link_text"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/place_my_pictures"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:paddingTop="2dp"
+                            android:paddingBottom="2dp"
+                            android:text="• My Pictures"
+                            android:textColor="@color/luna_task_link_text"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/place_my_music"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:paddingTop="2dp"
+                            android:paddingBottom="2dp"
+                            android:text="• My Music"
+                            android:textColor="@color/luna_task_link_text"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/place_downloads"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:paddingTop="2dp"
+                            android:paddingBottom="2dp"
+                            android:text="• Downloads"
+                            android:textColor="@color/luna_task_link_text"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Details Card -->
+                <LinearLayout
+                    android:id="@+id/card_details"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <RelativeLayout
+                        android:id="@+id/header_details"
+                        android:layout_width="match_parent"
+                        android:layout_height="22dp"
+                        android:background="@drawable/task_card_header_bg"
+                        android:paddingLeft="6dp"
+                        android:paddingRight="6dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:text="@string/details"
+                            android:textColor="@color/luna_task_header_title"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+
+                    <LinearLayout
+                        android:id="@+id/body_details"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/task_card_body_bg"
+                        android:orientation="vertical"
+                        android:padding="5dp">
+
+                        <TextView
+                            android:id="@+id/tv_detail_name"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="My Computer"
+                            android:textColor="#000000"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_detail_type"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="System Folder"
+                            android:textColor="#555555"
+                            android:textSize="10sp" />
+
+                        <TextView
+                            android:id="@+id/tv_detail_info"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Storage Overview"
+                            android:textColor="#555555"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- Right Main View (GridView or ListView) -->
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/luna_main_bg">
+
+            <GridView
+                android:id="@+id/grid_files"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:columnWidth="100dp"
+                android:horizontalSpacing="6dp"
+                android:numColumns="auto_fit"
+                android:padding="10dp"
+                android:stretchMode="columnWidth"
+                android:verticalSpacing="10dp" />
+
+            <ListView
+                android:id="@+id/list_files"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:divider="#E8E8E8"
+                android:dividerHeight="1dp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tv_empty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="This folder is empty."
+                android:textColor="#888888"
+                android:textSize="12sp"
+                android:visibility="gone" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- 5. Status Bar -->
+    <RelativeLayout
+        android:id="@+id/layout_statusbar"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:background="@color/luna_statusbar_bg"
+        android:paddingLeft="6dp"
+        android:paddingRight="6dp">
+
+        <TextView
+            android:id="@+id/tv_status_left"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="0 objects"
+            android:textColor="@color/luna_statusbar_text"
+            android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/tv_status_right"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:text="Disk Free Space: 5.6 GB"
+            android:textColor="@color/luna_statusbar_text"
+            android:textSize="10sp" />
+    </RelativeLayout>
+</LinearLayout>

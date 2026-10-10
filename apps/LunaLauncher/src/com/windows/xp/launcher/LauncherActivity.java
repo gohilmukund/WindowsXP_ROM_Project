@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
 import android.os.BatteryManager;
 import android.os.Bundle;
@@ -24,22 +25,31 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.windows.xp.launcher.theme.ThemeManager;
 import com.windows.xp.launcher.window.CmdPromptView;
+import com.windows.xp.launcher.window.ControlPanelWindowView;
+import com.windows.xp.launcher.window.DisplayPropertiesWindowView;
 import com.windows.xp.launcher.window.ExplorerWindowView;
+import com.windows.xp.launcher.window.NetworkConnectionsWindowView;
 import com.windows.xp.launcher.window.NotepadWindowView;
 import com.windows.xp.launcher.window.PaintWindowView;
+import com.windows.xp.launcher.window.SystemPropertiesWindowView;
 import com.windows.xp.launcher.window.WindowFrameView;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-public class LauncherActivity extends Activity {
+public class LauncherActivity extends Activity implements ThemeManager.OnThemeChangeListener {
 
     private View startMenuContainer;
+    private View allProgramsContainer;
+    private LinearLayout allProgramsList;
     private View btnStart;
     private LinearLayout taskbarTabsContainer;
     private TextView trayClock;
@@ -98,6 +108,18 @@ public class LauncherActivity extends Activity {
         packageManager = getPackageManager();
 
         startMenuContainer = findViewById(R.id.start_menu_container);
+        allProgramsContainer = findViewById(R.id.all_programs_container);
+        allProgramsList = (LinearLayout) findViewById(R.id.all_programs_list);
+        View btnCloseAllPrograms = findViewById(R.id.btn_close_all_programs);
+        if (btnCloseAllPrograms != null) {
+            btnCloseAllPrograms.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    closeAllPrograms();
+                }
+            });
+        }
+
         btnStart = findViewById(R.id.btn_start);
         taskbarTabsContainer = (LinearLayout) findViewById(R.id.taskbar_tabs_container);
         trayClock = (TextView) findViewById(R.id.tray_clock);
@@ -107,6 +129,9 @@ public class LauncherActivity extends Activity {
         setupStartButton();
         setupDesktopIcons();
         setupStartMenuItems();
+
+        ThemeManager.getInstance().addListener(this);
+        onThemeChanged(ThemeManager.getInstance().getCurrentTheme());
 
         // Register receivers
         registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
@@ -125,6 +150,7 @@ public class LauncherActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         handler.removeCallbacks(clockRunnable);
+        ThemeManager.getInstance().removeListener(this);
         try {
             unregisterReceiver(batteryReceiver);
             unregisterReceiver(minimizeReceiver);
@@ -154,8 +180,12 @@ public class LauncherActivity extends Activity {
                 altTabDialog.dismiss();
                 return true;
             }
+            if (allProgramsContainer != null && allProgramsContainer.getVisibility() == View.VISIBLE) {
+                allProgramsContainer.setVisibility(View.GONE);
+                return true;
+            }
             if (startMenuContainer.getVisibility() == View.VISIBLE) {
-                startMenuContainer.setVisibility(View.GONE);
+                closeStartMenu();
                 return true;
             }
             // If active floating window is open, minimize it to taskbar
@@ -170,10 +200,34 @@ public class LauncherActivity extends Activity {
 
     public void toggleStartMenu() {
         if (startMenuContainer.getVisibility() == View.VISIBLE) {
-            startMenuContainer.setVisibility(View.GONE);
+            closeStartMenu();
         } else {
             startMenuContainer.setVisibility(View.VISIBLE);
             startMenuContainer.bringToFront();
+        }
+    }
+
+    private void closeStartMenu() {
+        if (startMenuContainer != null && startMenuContainer.getVisibility() == View.VISIBLE) {
+            startMenuContainer.setVisibility(View.GONE);
+        }
+        closeAllPrograms();
+    }
+
+    private void closeAllPrograms() {
+        if (allProgramsContainer != null && allProgramsContainer.getVisibility() == View.VISIBLE) {
+            allProgramsContainer.setVisibility(View.GONE);
+        }
+    }
+
+    private void toggleAllPrograms() {
+        if (allProgramsContainer == null) return;
+        if (allProgramsContainer.getVisibility() == View.VISIBLE) {
+            allProgramsContainer.setVisibility(View.GONE);
+        } else {
+            populateAllProgramsList();
+            allProgramsContainer.setVisibility(View.VISIBLE);
+            allProgramsContainer.bringToFront();
         }
     }
 
@@ -193,14 +247,23 @@ public class LauncherActivity extends Activity {
             }
         });
 
-        findViewById(R.id.root_desktop).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (startMenuContainer.getVisibility() == View.VISIBLE) {
-                    startMenuContainer.setVisibility(View.GONE);
+        View rootDesktop = findViewById(R.id.root_desktop);
+        if (rootDesktop != null) {
+            rootDesktop.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    closeStartMenu();
                 }
-            }
-        });
+            });
+            rootDesktop.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    closeStartMenu();
+                    openDisplayProperties();
+                    return true;
+                }
+            });
+        }
     }
 
     private void setupDesktopIcons() {
@@ -340,6 +403,13 @@ public class LauncherActivity extends Activity {
             }
         });
 
+        findViewById(R.id.sm_item_all_programs).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleAllPrograms();
+            }
+        });
+
         findViewById(R.id.sm_item_my_docs).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -368,7 +438,7 @@ public class LauncherActivity extends Activity {
             @Override
             public void onClick(View v) {
                 closeStartMenu();
-                startActivity(new Intent(Settings.ACTION_SETTINGS));
+                openControlPanel();
             }
         });
 
@@ -389,10 +459,190 @@ public class LauncherActivity extends Activity {
         });
     }
 
-    private void closeStartMenu() {
-        if (startMenuContainer != null && startMenuContainer.getVisibility() == View.VISIBLE) {
-            startMenuContainer.setVisibility(View.GONE);
+    private void populateAllProgramsList() {
+        if (allProgramsList == null) return;
+        allProgramsList.removeAllViews();
+
+        // 1. Windows Accessories
+        addProgramSectionHeader(allProgramsList, "Accessories");
+        addProgramItem(allProgramsList, null, R.drawable.ic_cmd, "Command Prompt", new Runnable() {
+            @Override
+            public void run() { openCommandPrompt(); }
+        });
+        addProgramItem(allProgramsList, null, R.drawable.ic_notepad, "Notepad", new Runnable() {
+            @Override
+            public void run() { openNotepad(null); }
+        });
+        addProgramItem(allProgramsList, null, R.drawable.ic_paint, "Paint", new Runnable() {
+            @Override
+            public void run() { openPaint(); }
+        });
+        addProgramItem(allProgramsList, null, R.drawable.ic_my_computer, "Windows Explorer", new Runnable() {
+            @Override
+            public void run() { openExplorer("computer://"); }
+        });
+
+        // 2. Games
+        addProgramSectionHeader(allProgramsList, "Games");
+        addProgramItem(allProgramsList, null, R.drawable.ic_games, "3D Pinball (Space Cadet)", new Runnable() {
+            @Override
+            public void run() {
+                if (!launchApp("com.fexed.spacecadetpinball")) {
+                    launchApp("com.windows.xp.pinball");
+                }
+            }
+        });
+        addProgramItem(allProgramsList, null, R.drawable.ic_games, "Minesweeper", new Runnable() {
+            @Override
+            public void run() { launchApp("com.windows.xp.minesweeper"); }
+        });
+        addProgramItem(allProgramsList, null, R.drawable.ic_games, "Solitaire", new Runnable() {
+            @Override
+            public void run() { launchApp("com.windows.xp.solitaire"); }
+        });
+
+        // 3. System Tools & Settings
+        addProgramSectionHeader(allProgramsList, "System Tools");
+        addProgramItem(allProgramsList, null, R.drawable.ic_control_panel, "Control Panel", new Runnable() {
+            @Override
+            public void run() { openControlPanel(); }
+        });
+        addProgramItem(allProgramsList, null, R.drawable.ic_system_properties, "System Properties", new Runnable() {
+            @Override
+            public void run() { openSystemProperties(); }
+        });
+        addProgramItem(allProgramsList, null, R.drawable.ic_network, "Network Connections", new Runnable() {
+            @Override
+            public void run() { openNetworkConnections(); }
+        });
+        addProgramItem(allProgramsList, null, R.drawable.ic_display, "Display Properties", new Runnable() {
+            @Override
+            public void run() { openDisplayProperties(); }
+        });
+
+        // 4. Internet & Media
+        addProgramSectionHeader(allProgramsList, "Internet & Media");
+        addProgramItem(allProgramsList, null, R.drawable.ic_internet_explorer, "Internet Explorer", new Runnable() {
+            @Override
+            public void run() {
+                if (!launchApp("com.windows.xp.internetexplorer")) {
+                    launchApp("org.mozilla.firefox");
+                }
+            }
+        });
+        addProgramItem(allProgramsList, null, R.drawable.ic_wmp, "Windows Media Player", new Runnable() {
+            @Override
+            public void run() {
+                if (!launchApp("com.windows.xp.wmp")) {
+                    launchApp("org.schabi.newpipelegacy");
+                }
+            }
+        });
+        addProgramItem(allProgramsList, null, R.drawable.ic_fotoo, "Fotoo Digital Frame", new Runnable() {
+            @Override
+            public void run() {
+                if (!launchApp("com.bo.fotoo")) {
+                    launchApp("com.boombuler.fotoo");
+                }
+            }
+        });
+
+        // 5. Installed Android Applications (Dynamic Alphabetical List)
+        addProgramSectionHeader(allProgramsList, "Installed Applications");
+        try {
+            Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+            mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+            List<ResolveInfo> pkgAppsList = packageManager.queryIntentActivities(mainIntent, 0);
+
+            Collections.sort(pkgAppsList, new Comparator<ResolveInfo>() {
+                @Override
+                public int compare(ResolveInfo a, ResolveInfo b) {
+                    CharSequence labelA = a.loadLabel(packageManager);
+                    CharSequence labelB = b.loadLabel(packageManager);
+                    String sA = labelA != null ? labelA.toString() : "";
+                    String sB = labelB != null ? labelB.toString() : "";
+                    return sA.compareToIgnoreCase(sB);
+                }
+            });
+
+            String myPkg = getPackageName();
+            for (final ResolveInfo ri : pkgAppsList) {
+                if (ri.activityInfo == null) continue;
+                final String pkgName = ri.activityInfo.packageName;
+                if (myPkg.equals(pkgName)) continue; // Don't show launcher itself
+
+                CharSequence label = ri.loadLabel(packageManager);
+                String title = label != null ? label.toString() : ri.activityInfo.name;
+                Drawable icon = null;
+                try {
+                    icon = ri.loadIcon(packageManager);
+                } catch (Exception ignored) {}
+
+                addProgramItem(allProgramsList, icon, R.drawable.ic_my_computer, title, new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Intent launchIntent = packageManager.getLaunchIntentForPackage(pkgName);
+                            if (launchIntent != null) {
+                                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(launchIntent);
+                            }
+                        } catch (Exception e) {
+                            Toast.makeText(LauncherActivity.this, "Cannot launch " + pkgName, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void addProgramSectionHeader(LinearLayout container, String title) {
+        TextView header = new TextView(this);
+        header.setText(title);
+        header.setTextColor(0xFF003399);
+        header.setTypeface(null, android.graphics.Typeface.BOLD);
+        header.setTextSize(10);
+        header.setPadding(dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(2));
+        container.addView(header);
+    }
+
+    private void addProgramItem(LinearLayout container, Drawable icon, int iconRes, String title, final Runnable action) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        row.setPadding(dpToPx(8), dpToPx(4), dpToPx(8), dpToPx(4));
+        row.setBackgroundResource(R.drawable.menu_item_selector);
+        row.setClickable(true);
+
+        ImageView img = new ImageView(this);
+        if (icon != null) {
+            img.setImageDrawable(icon);
+        } else {
+            img.setImageResource(iconRes);
         }
+        LinearLayout.LayoutParams imgLp = new LinearLayout.LayoutParams(dpToPx(20), dpToPx(20));
+        row.addView(img, imgLp);
+
+        TextView tv = new TextView(this);
+        tv.setText(title);
+        tv.setTextColor(0xFF000000);
+        tv.setTextSize(11);
+        tv.setMaxLines(1);
+        LinearLayout.LayoutParams tvLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tvLp.leftMargin = dpToPx(8);
+        row.addView(tv, tvLp);
+
+        row.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                closeAllPrograms();
+                closeStartMenu();
+                if (action != null) action.run();
+            }
+        });
+
+        container.addView(row);
     }
 
     private void setDesktopLauncher(int viewId, final String pkg, final Runnable fallback) {
@@ -497,7 +747,7 @@ public class LauncherActivity extends Activity {
     }
 
     public void openExplorer(String path) {
-        WindowFrameView win = new WindowFrameView(this);
+        final WindowFrameView win = new WindowFrameView(this);
         ExplorerWindowView explorerView = new ExplorerWindowView(this);
         explorerView.setFileActionListener(new ExplorerWindowView.FileActionListener() {
             @Override
@@ -505,11 +755,126 @@ public class LauncherActivity extends Activity {
                 openNotepad(file);
             }
         });
+        explorerView.setOnTitleChangeListener(new ExplorerWindowView.OnTitleChangeListener() {
+            @Override
+            public void onTitleChange(String title, int iconRes) {
+                win.setTitle(title);
+                win.setIcon(iconRes);
+                refreshTaskbarTabs();
+            }
+        });
         win.setWindowContent(explorerView);
         if (path != null) {
             explorerView.navigateTo(path, false);
         }
-        openWindow(win, "Windows Explorer", R.drawable.ic_my_computer, 620, 440);
+        openWindow(win, "My Computer", R.drawable.ic_my_computer, 620, 440);
+    }
+
+    public void openControlPanel() {
+        final WindowFrameView win = new WindowFrameView(this);
+        ControlPanelWindowView cpView = new ControlPanelWindowView(this);
+        cpView.setControlPanelListener(new ControlPanelWindowView.ControlPanelListener() {
+            @Override
+            public void onOpenDisplayProperties() {
+                openDisplayProperties();
+            }
+
+            @Override
+            public void onOpenSystemProperties() {
+                openSystemProperties();
+            }
+
+            @Override
+            public void onOpenNetworkConnections() {
+                openNetworkConnections();
+            }
+
+            @Override
+            public void onOpenDateTime() {
+                try {
+                    startActivity(new Intent(Settings.ACTION_DATE_SETTINGS));
+                } catch (Exception e) {
+                    Toast.makeText(LauncherActivity.this, "Date & Time Settings", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onOpenAppsManager() {
+                try {
+                    startActivity(new Intent(Settings.ACTION_APPLICATION_SETTINGS));
+                } catch (Exception e) {
+                    Toast.makeText(LauncherActivity.this, "Add or Remove Programs", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        win.setWindowContent(cpView);
+        openWindow(win, "Control Panel", R.drawable.ic_control_panel, 600, 420);
+    }
+
+    public void openSystemProperties() {
+        final WindowFrameView win = new WindowFrameView(this);
+        SystemPropertiesWindowView sysView = new SystemPropertiesWindowView(this);
+        sysView.setOnDialogActionListener(new SystemPropertiesWindowView.OnDialogActionListener() {
+            @Override
+            public void onClose() {
+                win.close();
+            }
+        });
+        win.setWindowContent(sysView);
+        openWindow(win, "System Properties", R.drawable.ic_system_properties, 500, 420);
+    }
+
+    public void openNetworkConnections() {
+        final WindowFrameView win = new WindowFrameView(this);
+        NetworkConnectionsWindowView netView = new NetworkConnectionsWindowView(this);
+        netView.setOnDialogCloseListener(new NetworkConnectionsWindowView.OnDialogCloseListener() {
+            @Override
+            public void onClose() {
+                win.close();
+            }
+        });
+        win.setWindowContent(netView);
+        openWindow(win, "Network Connections", R.drawable.ic_network, 520, 400);
+    }
+
+    public void openDisplayProperties() {
+        final WindowFrameView win = new WindowFrameView(this);
+        DisplayPropertiesWindowView dispView = new DisplayPropertiesWindowView(this);
+        dispView.setOnDialogActionListener(new DisplayPropertiesWindowView.OnDialogActionListener() {
+            @Override
+            public void onClose() {
+                win.close();
+            }
+        });
+        win.setWindowContent(dispView);
+        openWindow(win, "Display Properties", R.drawable.ic_display, 520, 430);
+    }
+
+    @Override
+    public void onThemeChanged(ThemeManager.Theme newTheme) {
+        ThemeManager tm = ThemeManager.getInstance();
+        View desktop = findViewById(R.id.root_desktop);
+        if (desktop != null) {
+            desktop.setBackgroundResource(tm.getWallpaperRes());
+        }
+        View taskbar = findViewById(R.id.taskbar);
+        if (taskbar != null) {
+            taskbar.setBackgroundResource(tm.getTaskbarBgRes());
+        }
+        if (btnStart != null) {
+            btnStart.setBackgroundResource(tm.getStartButtonBgRes());
+        }
+        ImageView imgFlag = (ImageView) findViewById(R.id.img_start_flag);
+        if (imgFlag != null) {
+            imgFlag.setImageResource(tm.getStartIconRes());
+        }
+        TextView tvStart = (TextView) findViewById(R.id.tv_start_text);
+        if (tvStart != null) {
+            String text = tm.getStartButtonText();
+            tvStart.setText(text);
+            tvStart.setVisibility(text.isEmpty() ? View.GONE : View.VISIBLE);
+        }
+        refreshTaskbarTabs();
     }
 
     // --- App Launching & Helpers ---
@@ -600,12 +965,7 @@ public class LauncherActivity extends Activity {
             tab.setClickable(true);
 
             ImageView img = new ImageView(this);
-            int iconRes = R.drawable.ic_my_computer;
-            String t = window.getTitle().toLowerCase();
-            if (t.contains("cmd") || t.contains("command")) iconRes = R.drawable.ic_cmd;
-            else if (t.contains("notepad")) iconRes = R.drawable.ic_notepad;
-            else if (t.contains("paint")) iconRes = R.drawable.ic_paint;
-            else if (t.contains("explorer")) iconRes = R.drawable.ic_my_computer;
+            int iconRes = window.getIconRes();
             img.setImageResource(iconRes);
 
             LinearLayout.LayoutParams imgP = new LinearLayout.LayoutParams(dpToPx(16), dpToPx(16));

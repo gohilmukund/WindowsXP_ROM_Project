@@ -569,6 +569,76 @@
         </LinearLayout>
     </LinearLayout>
 
+    <!-- All Programs Flyout Menu (Cascades to the right of Start Menu) -->
+    <LinearLayout
+        android:id="@+id/all_programs_container"
+        android:layout_width="290dp"
+        android:layout_height="380dp"
+        android:layout_gravity="bottom|left"
+        android:layout_marginLeft="378dp"
+        android:layout_marginBottom="32dp"
+        android:background="@drawable/all_programs_bg"
+        android:clickable="true"
+        android:elevation="12dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <!-- Top Header: All Programs -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:background="@drawable/luna_titlebar_active"
+            android:gravity="center_vertical"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_games" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="8dp"
+                android:shadowColor="#80000000"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:shadowRadius="2"
+                android:text="All Programs"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btn_close_all_programs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:padding="4dp"
+                android:text="✕"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Scrollable Programs List -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#FFFFFF">
+
+            <LinearLayout
+                android:id="@+id/all_programs_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="4dp" />
+        </ScrollView>
+    </LinearLayout>
+
     <!-- Taskbar (Docked at bottom) -->
     <LinearLayout
         android:id="@+id/taskbar"
@@ -590,11 +660,13 @@
             android:paddingLeft="10dp">
 
             <ImageView
+                android:id="@+id/img_start_flag"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:src="@drawable/ic_win_flag" />
 
             <TextView
+                android:id="@+id/tv_start_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="6dp"
