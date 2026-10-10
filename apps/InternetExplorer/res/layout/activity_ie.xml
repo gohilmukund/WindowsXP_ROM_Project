@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ECE9D8"
+    android:orientation="vertical">
+
+    <!-- Title Bar -->
+    <LinearLayout
+        android:id="@+id/ie_title_bar"
+        android:layout_width="match_parent"
+        android:layout_height="28dp"
+        android:background="@drawable/titlebar_bg"
+        android:gravity="center_vertical"
+        android:paddingLeft="6dp"
+        android:paddingRight="6dp">
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_internet_explorer" />
+
+        <TextView
+            android:id="@+id/ie_title_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="6dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:shadowColor="#80000000"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="1"
+            android:text="Microsoft Internet Explorer"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <!-- Minimize Button -->
+        <Button
+            android:id="@+id/ie_btn_minimize"
+            android:layout_width="21dp"
+            android:layout_height="21dp"
+            android:background="@drawable/ie_btn_min_max_bg"
+            android:gravity="center"
+            android:text="–"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <!-- Maximize Button -->
+        <Button
+            android:id="@+id/ie_btn_maximize"
+            android:layout_width="21dp"
+            android:layout_height="21dp"
+            android:layout_marginLeft="2dp"
+            android:background="@drawable/ie_btn_min_max_bg"
+            android:gravity="center"
+            android:text="口"
+            android:textColor="#FFFFFF"
+            android:textSize="9sp" />
+
+        <!-- Close Button -->
+        <Button
+            android:id="@+id/ie_btn_close"
+            android:layout_width="21dp"
+            android:layout_height="21dp"
+            android:layout_marginLeft="2dp"
+            android:background="@drawable/ie_btn_close_bg"
+            android:gravity="center"
+            android:text="✕"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Menu Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="22dp"
+        android:background="#ECE9D8"
+        android:gravity="center_vertical"
+        android:paddingLeft="8dp">
+
+        <TextView android:id="@+id/menu_file" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingRight="12dp" android:text="File" android:textColor="#000000" android:textSize="11sp" />
+        <TextView android:id="@+id/menu_edit" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingRight="12dp" android:text="Edit" android:textColor="#000000" android:textSize="11sp" />
+        <TextView android:id="@+id/menu_view" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingRight="12dp" android:text="View" android:textColor="#000000" android:textSize="11sp" />
+        <TextView android:id="@+id/menu_favorites" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingRight="12dp" android:text="Favorites" android:textColor="#000000" android:textSize="11sp" />
+        <TextView android:id="@+id/menu_tools" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingRight="12dp" android:text="Tools" android:textColor="#000000" android:textSize="11sp" />
+        <TextView android:id="@+id/menu_help" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingRight="12dp" android:text="Help" android:textColor="#000000" android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- Standard Buttons Toolbar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:background="@drawable/ie_toolbar_bg"
+        android:gravity="center_vertical"
+        android:paddingLeft="6dp"
+        android:paddingRight="6dp">
+
+        <ImageView
+            android:id="@+id/ie_tool_back"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:clickable="true"
+            android:src="@drawable/ic_ie_back" />
+
+        <ImageView
+            android:id="@+id/ie_tool_forward"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_marginLeft="4dp"
+            android:clickable="true"
+            android:src="@drawable/ic_ie_forward" />
+
+        <ImageView
+            android:id="@+id/ie_tool_stop"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginLeft="8dp"
+            android:clickable="true"
+            android:src="@drawable/ic_ie_stop" />
+
+        <ImageView
+            android:id="@+id/ie_tool_refresh"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginLeft="6dp"
+            android:clickable="true"
+            android:src="@drawable/ic_ie_refresh" />
+
+        <ImageView
+            android:id="@+id/ie_tool_home"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginLeft="6dp"
+            android:clickable="true"
+            android:src="@drawable/ic_ie_home" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!-- Animated Spinning Globe -->
+        <ImageView
+            android:id="@+id/ie_globe"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:src="@drawable/ic_ie_globe" />
+    </LinearLayout>
+
+    <!-- Address Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="28dp"
+        android:background="#ECE9D8"
+        android:gravity="center_vertical"
+        android:paddingLeft="6dp"
+        android:paddingRight="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Address"
+            android:textColor="#505050"
+            android:textSize="11sp" />
+
+        <EditText
+            android:id="@+id/ie_url_input"
+            android:layout_width="0dp"
+            android:layout_height="24dp"
+            android:layout_marginLeft="6dp"
+            android:layout_marginRight="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/ie_address_input_bg"
+            android:imeOptions="actionGo"
+            android:inputType="textUri"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:singleLine="true"
+            android:text="https://www.instagram.com"
+            android:textColor="#000000"
+            android:textSize="11sp" />
+
+        <LinearLayout
+            android:id="@+id/ie_btn_go"
+            android:layout_width="48dp"
+            android:layout_height="24dp"
+            android:background="#ECE9D8"
+            android:clickable="true"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_ie_go" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="2dp"
+                android:text="Go"
+                android:textColor="#000000"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Web View Area -->
+    <WebView
+        android:id="@+id/ie_webview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Status Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:background="#ECE9D8"
+        android:gravity="center_vertical"
+        android:paddingLeft="6dp"
+        android:paddingRight="6dp">
+
+        <TextView
+            android:id="@+id/ie_status_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Done"
+            android:textColor="#333333"
+            android:textSize="10sp" />
+
+        <ProgressBar
+            android:id="@+id/ie_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="100dp"
+            android:layout_height="12dp"
+            android:max="100"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/ie_zone_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="Internet"
+            android:textColor="#555555"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+</LinearLayout>
