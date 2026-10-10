@@ -1,0 +1,18 @@
+# Windows XP Luna Performance & UI Tweaks
+# Hide Android virtual navigation bar (hardware keys used for Start/AltTab/Minimize)
+qemu.hw.mainkeys=1
+
+# Theme identifier
+persist.sys.theme=luna
+
+# Dalvik VM optimizations for 1GB RAM tablet
+dalvik.vm.heapgrowthlimit=128m
+dalvik.vm.heapsize=256m
+dalvik.vm.heaptargetutilization=0.75
+dalvik.vm.heapminfree=2m
+dalvik.vm.heapmaxfree=8m
+
+# Hardware UI acceleration
+video.accelerate.hw=1
+debug.sf.hw=1
+debug.egl.hw=1
