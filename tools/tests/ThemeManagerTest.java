@@ -1,12 +1,13 @@
 package tools.tests;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class ThemeManagerTest {
 
-    public static void runAllTests() {
+    public static void runAllTests() throws Exception {
         testAllThemesExist();
         testDynamicTrayMethodsExist();
         testStartMenuPaneAccessorsExist();
@@ -14,82 +15,181 @@ public class ThemeManagerTest {
         testStartButtonWidths();
     }
 
-    private static void testAllThemesExist() {
-        try {
-            Class<?> themeEnum = Class.forName("com.windows.xp.launcher.theme.ThemeManager$Theme");
-            Object[] constants = themeEnum.getEnumConstants();
-            List<String> names = Arrays.asList(
-                "LUNA_BLUE", "LUNA_OLIVE", "LUNA_SILVER", "ROYALE",
-                "CLASSIC", "VISTA", "WIN7_AERO", "WIN11"
-            );
-            for (String expected : names) {
-                boolean found = false;
-                for (Object c : constants) {
-                    if (c.toString().equals(expected)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    throw new AssertionError("Missing expected theme enum: " + expected);
+    public static void testAllThemesExist() throws Exception {
+        Class<?> themeEnum = Class.forName("com.windows.xp.launcher.theme.ThemeManager$Theme");
+        Object[] constants = themeEnum.getEnumConstants();
+        List<String> names = Arrays.asList(
+            "LUNA_BLUE", "LUNA_OLIVE", "LUNA_SILVER", "ROYALE",
+            "CLASSIC", "VISTA", "WIN7_AERO", "WIN11"
+        );
+        List<String> missing = new ArrayList<String>();
+        for (String expected : names) {
+            boolean found = false;
+            for (Object c : constants) {
+                if (((Enum<?>) c).name().equals(expected)) {
+                    found = true;
+                    break;
                 }
             }
-            System.out.println("  [PASS] testAllThemesExist");
-        } catch (ClassNotFoundException e) {
-            throw new AssertionError("Theme enum class not found: " + e.getMessage());
+            if (!found) {
+                missing.add(expected);
+            }
+        }
+        if (!missing.isEmpty()) {
+            throw new AssertionError("Missing expected theme enum(s): " + missing);
         }
     }
 
-    private static void testDynamicTrayMethodsExist() {
-        try {
-            Class<?> tmClass = Class.forName("com.windows.xp.launcher.theme.ThemeManager");
-            tmClass.getMethod("getTaskbarTrayBgRes");
-            tmClass.getMethod("getTaskbarTrayTextColor");
-            tmClass.getMethod("getTaskbarTrayBatteryColor");
-            System.out.println("  [PASS] testDynamicTrayMethodsExist");
-        } catch (NoSuchMethodException e) {
-            throw new AssertionError("Missing dynamic tray accessor: " + e.getMessage());
-        } catch (ClassNotFoundException e) {
-            throw new AssertionError("ThemeManager class not found: " + e.getMessage());
+    public static void testDynamicTrayMethodsExist() throws Exception {
+        Class<?> tmClass = Class.forName("com.windows.xp.launcher.theme.ThemeManager");
+        Class<?> themeEnum = Class.forName("com.windows.xp.launcher.theme.ThemeManager$Theme");
+        Method mBg = tmClass.getMethod("getTaskbarTrayBgRes");
+        Method mText = tmClass.getMethod("getTaskbarTrayTextColor");
+        Method mBattery = tmClass.getMethod("getTaskbarTrayBatteryColor");
+
+        if (mBg.getReturnType() != int.class) {
+            throw new AssertionError("getTaskbarTrayBgRes must return int, got " + mBg.getReturnType().getName());
+        }
+        if (mText.getReturnType() != int.class) {
+            throw new AssertionError("getTaskbarTrayTextColor must return int, got " + mText.getReturnType().getName());
+        }
+        if (mBattery.getReturnType() != int.class) {
+            throw new AssertionError("getTaskbarTrayBatteryColor must return int, got " + mBattery.getReturnType().getName());
+        }
+
+        Method getInstanceMethod = tmClass.getMethod("getInstance");
+        Object tm = getInstanceMethod.invoke(null);
+        Method setThemeMethod = tmClass.getMethod("setTheme", themeEnum);
+
+        Object[] constants = themeEnum.getEnumConstants();
+        for (Object c : constants) {
+            setThemeMethod.invoke(tm, c);
+            Object bgVal = mBg.invoke(tm);
+            Object textVal = mText.invoke(tm);
+            Object batteryVal = mBattery.invoke(tm);
+            if (bgVal == null || textVal == null || batteryVal == null) {
+                throw new AssertionError("Dynamic tray accessors returned null for theme " + ((Enum<?>) c).name());
+            }
         }
     }
 
-    private static void testStartMenuPaneAccessorsExist() {
-        try {
-            Class<?> tmClass = Class.forName("com.windows.xp.launcher.theme.ThemeManager");
-            tmClass.getMethod("getStartMenuRightPaneBgColor");
-            tmClass.getMethod("getStartMenuRightPaneTextColor");
-            tmClass.getMethod("getStartMenuDividerColor");
-            System.out.println("  [PASS] testStartMenuPaneAccessorsExist");
-        } catch (NoSuchMethodException e) {
-            throw new AssertionError("Missing start menu pane accessor: " + e.getMessage());
-        } catch (ClassNotFoundException e) {
-            throw new AssertionError("ThemeManager class not found: " + e.getMessage());
+    public static void testStartMenuPaneAccessorsExist() throws Exception {
+        Class<?> tmClass = Class.forName("com.windows.xp.launcher.theme.ThemeManager");
+        Class<?> themeEnum = Class.forName("com.windows.xp.launcher.theme.ThemeManager$Theme");
+        Method mRightBg = tmClass.getMethod("getStartMenuRightPaneBgColor");
+        Method mRightText = tmClass.getMethod("getStartMenuRightPaneTextColor");
+        Method mDivider = tmClass.getMethod("getStartMenuDividerColor");
+
+        if (mRightBg.getReturnType() != int.class) {
+            throw new AssertionError("getStartMenuRightPaneBgColor must return int, got " + mRightBg.getReturnType().getName());
+        }
+        if (mRightText.getReturnType() != int.class) {
+            throw new AssertionError("getStartMenuRightPaneTextColor must return int, got " + mRightText.getReturnType().getName());
+        }
+        if (mDivider.getReturnType() != int.class) {
+            throw new AssertionError("getStartMenuDividerColor must return int, got " + mDivider.getReturnType().getName());
+        }
+
+        Method getInstanceMethod = tmClass.getMethod("getInstance");
+        Object tm = getInstanceMethod.invoke(null);
+        Method setThemeMethod = tmClass.getMethod("setTheme", themeEnum);
+
+        Object[] constants = themeEnum.getEnumConstants();
+        for (Object c : constants) {
+            setThemeMethod.invoke(tm, c);
+            Object rightBgVal = mRightBg.invoke(tm);
+            Object rightTextVal = mRightText.invoke(tm);
+            Object dividerVal = mDivider.invoke(tm);
+            if (rightBgVal == null || rightTextVal == null || dividerVal == null) {
+                throw new AssertionError("Start menu pane accessors returned null for theme " + ((Enum<?>) c).name());
+            }
         }
     }
 
-    private static void testStartMenuColorArrays() {
-        try {
-            Class<?> tmClass = Class.forName("com.windows.xp.launcher.theme.ThemeManager");
-            Method mHeader = tmClass.getMethod("getStartMenuHeaderColors");
-            Method mBottom = tmClass.getMethod("getStartMenuBottomColors");
-            System.out.println("  [PASS] testStartMenuColorArrays");
-        } catch (NoSuchMethodException e) {
-            throw new AssertionError("Missing start menu color array accessor: " + e.getMessage());
-        } catch (ClassNotFoundException e) {
-            throw new AssertionError("ThemeManager class not found: " + e.getMessage());
+    public static void testStartMenuColorArrays() throws Exception {
+        Class<?> tmClass = Class.forName("com.windows.xp.launcher.theme.ThemeManager");
+        Class<?> themeEnum = Class.forName("com.windows.xp.launcher.theme.ThemeManager$Theme");
+        Method mHeader = tmClass.getMethod("getStartMenuHeaderColors");
+        Method mBottom = tmClass.getMethod("getStartMenuBottomColors");
+
+        if (mHeader.getReturnType() != int[].class) {
+            throw new AssertionError("getStartMenuHeaderColors must return int[]");
+        }
+        if (mBottom.getReturnType() != int[].class) {
+            throw new AssertionError("getStartMenuBottomColors must return int[]");
+        }
+
+        Method getInstanceMethod = tmClass.getMethod("getInstance");
+        Object tm = getInstanceMethod.invoke(null);
+        Method setThemeMethod = tmClass.getMethod("setTheme", themeEnum);
+
+        Object[] constants = themeEnum.getEnumConstants();
+        for (Object c : constants) {
+            String themeName = ((Enum<?>) c).name();
+            setThemeMethod.invoke(tm, c);
+
+            Object headerObj = mHeader.invoke(tm);
+            if (!(headerObj instanceof int[])) {
+                throw new AssertionError("getStartMenuHeaderColors did not return int[] for theme " + themeName);
+            }
+            int[] header = (int[]) headerObj;
+            if (header.length != 2) {
+                throw new AssertionError("getStartMenuHeaderColors length is " + header.length + " (expected 2) for theme " + themeName);
+            }
+            if (header[0] == 0 || header[1] == 0) {
+                throw new AssertionError("getStartMenuHeaderColors elements must be non-zero for theme " + themeName);
+            }
+
+            Object bottomObj = mBottom.invoke(tm);
+            if (!(bottomObj instanceof int[])) {
+                throw new AssertionError("getStartMenuBottomColors did not return int[] for theme " + themeName);
+            }
+            int[] bottom = (int[]) bottomObj;
+            if (bottom.length != 2) {
+                throw new AssertionError("getStartMenuBottomColors length is " + bottom.length + " (expected 2) for theme " + themeName);
+            }
+            if (bottom[0] == 0 || bottom[1] == 0) {
+                throw new AssertionError("getStartMenuBottomColors elements must be non-zero for theme " + themeName);
+            }
         }
     }
 
-    private static void testStartButtonWidths() {
-        try {
-            Class<?> tmClass = Class.forName("com.windows.xp.launcher.theme.ThemeManager");
-            tmClass.getMethod("getStartButtonWidthDp");
-            System.out.println("  [PASS] testStartButtonWidths");
-        } catch (NoSuchMethodException e) {
-            throw new AssertionError("Missing getStartButtonWidthDp: " + e.getMessage());
-        } catch (ClassNotFoundException e) {
-            throw new AssertionError("ThemeManager class not found: " + e.getMessage());
+    public static void testStartButtonWidths() throws Exception {
+        Class<?> tmClass = Class.forName("com.windows.xp.launcher.theme.ThemeManager");
+        Class<?> themeEnum = Class.forName("com.windows.xp.launcher.theme.ThemeManager$Theme");
+        Method mWidth = tmClass.getMethod("getStartButtonWidthDp");
+
+        if (mWidth.getReturnType() != int.class) {
+            throw new AssertionError("getStartButtonWidthDp must return int, got " + mWidth.getReturnType().getName());
+        }
+
+        Method getInstanceMethod = tmClass.getMethod("getInstance");
+        Object tm = getInstanceMethod.invoke(null);
+        Method setThemeMethod = tmClass.getMethod("setTheme", themeEnum);
+
+        Object[] constants = themeEnum.getEnumConstants();
+        for (Object c : constants) {
+            String themeName = ((Enum<?>) c).name();
+            setThemeMethod.invoke(tm, c);
+            int width = (Integer) mWidth.invoke(tm);
+
+            int expectedWidth;
+            if ("LUNA_BLUE".equals(themeName) || "LUNA_OLIVE".equals(themeName) ||
+                "LUNA_SILVER".equals(themeName) || "ROYALE".equals(themeName)) {
+                expectedWidth = 106;
+            } else if ("WIN7_AERO".equals(themeName) || "VISTA".equals(themeName)) {
+                expectedWidth = 48;
+            } else if ("WIN11".equals(themeName)) {
+                expectedWidth = 42;
+            } else if ("CLASSIC".equals(themeName)) {
+                expectedWidth = 65;
+            } else {
+                throw new AssertionError("Unexpected theme: " + themeName);
+            }
+
+            if (width != expectedWidth) {
+                throw new AssertionError("Theme " + themeName + " expected start button width " + expectedWidth + " dp, got " + width);
+            }
         }
     }
 }
