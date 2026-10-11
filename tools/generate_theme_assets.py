@@ -2,11 +2,41 @@ import os
 import math
 import colorsys
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DRAWABLE_DIR = os.path.join(PROJECT_ROOT, "apps/LunaLauncher/res/drawable")
-REF_DIR = os.path.join(os.path.expanduser("~"), ".gemini/antigravity/brain/e4519e1e-a57e-4b5b-8ef0-8128cf9a52bc/.user_uploaded")
+DRAWABLE_DIR = os.path.join(PROJECT_ROOT, "apps", "LunaLauncher", "res", "drawable")
+
+def find_win7_orb_source():
+    candidates = [
+        r"C:\Users\gohil\.gemini\antigravity\brain\e4519e1e-a57e-4b5b-8ef0-8128cf9a52bc\scratch\win7_orb_256.png",
+        os.path.expanduser("~/.gemini/antigravity/brain/e4519e1e-a57e-4b5b-8ef0-8128cf9a52bc/scratch/win7_orb_256.png"),
+        "/mnt/c/Users/gohil/.gemini/antigravity/brain/e4519e1e-a57e-4b5b-8ef0-8128cf9a52bc/scratch/win7_orb_256.png",
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return None
+
+def find_win11_wallpaper_source():
+    candidates = [
+        r"C:\Windows\Web\Wallpaper\Windows\img0.jpg",
+        "/mnt/c/Windows/Web/Wallpaper/Windows/img0.jpg",
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return None
+
+def find_framdit_font():
+    candidates = [
+        r"C:\Windows\Fonts\framdit.ttf",
+        "/mnt/c/Windows/Fonts/framdit.ttf",
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return None
 
 def generate_luna_pill_buttons():
     # Base authentic Luna button
@@ -42,116 +72,57 @@ def generate_luna_pill_buttons():
     img_olive.save(dest_olive, "PNG")
     print(f"[OK] Saved {dest_olive}: size={img_olive.size}")
 
-    # 2. Royale Emerald Green Luna Button (106x30)
-    arr_royale = arr.copy()
-    for y in range(h_img):
-        for x in range(w_img):
-            r, g, b, a = arr_royale[y, x]
-            if a == 0:
-                continue
-            rf, gf, bf = r / 255.0, g / 255.0, b / 255.0
-            h, s, v = colorsys.rgb_to_hsv(rf, gf, bf)
-            
-            is_flag_pane = (x < 28) and (9 <= y <= 22) and (15 <= x <= 27)
-            if 95 <= h*360 <= 145 and s > 0.20 and not is_flag_pane:
-                # Authentic XP Media Center / Royale Emerald Green
-                h_new = 118.0 / 360.0
-                s_new = min(1.0, s * 1.15)
-                v_new = min(1.0, v * 1.10)
-                rn, gn, bn = colorsys.hsv_to_rgb(h_new, s_new, v_new)
-                arr_royale[y, x] = [int(rn*255), int(gn*255), int(bn*255), a]
+def generate_start_button_royale():
+    # Authentic Microsoft royale.msstyles pill from RetroBar
+    pill_path = os.path.join(PROJECT_ROOT, "tools", "cache", "RetroBar", "RetroBar", "Resources", "startxproyalebutton.png")
+    if not os.path.exists(pill_path):
+        raise FileNotFoundError(f"Missing RetroBar royale button: {pill_path}")
+    pill_src = Image.open(pill_path).convert("RGBA")
+    # Crop normal state (top 33px) and resize to 106x34 with LANCZOS
+    pill = pill_src.crop((0, 0, 99, 33)).resize((106, 34), Image.Resampling.LANCZOS)
 
-    img_royale = Image.fromarray(arr_royale)
+    # Paste authentic flag from ic_turn_off_header_flag.png at (14, 9)
+    flag_path = os.path.join(DRAWABLE_DIR, "ic_turn_off_header_flag.png")
+    if not os.path.exists(flag_path):
+        raise FileNotFoundError(f"Missing header flag: {flag_path}")
+    flag_src = Image.open(flag_path).convert("RGBA")
+    flag_resized = flag_src.resize((18, 17), Image.Resampling.LANCZOS)
+    canvas = pill.copy()
+    canvas.paste(flag_resized, (14, 9), flag_resized)
+
+    # Render 'start' text using Franklin Gothic Medium Italic font
+    font_path = find_framdit_font()
+    if font_path:
+        font = ImageFont.truetype(font_path, 19)
+    else:
+        raise FileNotFoundError("Franklin Gothic Medium Italic font (framdit.ttf) not found")
+    draw = ImageDraw.Draw(canvas)
+    # Dark green drop shadow (0, 60, 10, 180) at (39, 7)
+    draw.text((39, 7), "start", font=font, fill=(0, 60, 10, 180))
+    # White text (255, 255, 255, 255) at (38, 6)
+    draw.text((38, 6), "start", font=font, fill=(255, 255, 255, 255))
+
     dest_royale = os.path.join(DRAWABLE_DIR, "start_button_royale.png")
-    img_royale.save(dest_royale, "PNG")
-    print(f"[OK] Saved {dest_royale}: size={img_royale.size}")
+    canvas.save(dest_royale, "PNG")
+    print(f"[OK] Saved {dest_royale}: size={canvas.size}")
 
 def generate_win7_orb():
-    # 3. Windows 7 Aero Orb (48x48)
-    W, H = 48, 48
-    im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    
-    cx, cy = 23.5, 23.5
-    R = 19.5
-    
-    # Render glass sphere pixel-by-pixel
-    for y in range(H):
-        for x in range(W):
-            dx = x - cx
-            dy = y - cy
-            dist = math.sqrt(dx*dx + dy*dy)
-            
-            # Outside outer halo
-            if dist > R + 2.2:
-                continue
-                
-            # Outer cyan glass glow
-            if dist > R:
-                glow_alpha = int(max(0, 1.0 - (dist - R) / 2.2) * 80)
-                im.putpixel((x, y), (110, 195, 255, glow_alpha))
-                continue
-                
-            # Normalized coordinates
-            nx = dx / R
-            ny = dy / R
-            nz = math.sqrt(max(0.0, 1.0 - nx*nx - ny*ny))
-            
-            # Base dark blue sphere gradient (Aero glass)
-            t = (ny + 1.0) / 2.0
-            r_base = int(22 * (1 - t) + 8 * t)
-            g_base = int(100 * (1 - t) + 40 * t)
-            b_base = int(205 * (1 - t) + 110 * t)
-            
-            # Specular glass reflection on top dome
-            rx_d = dx / 11.5
-            ry_d = (dy + 5.5) / 7.0
-            refl_dist = rx_d*rx_d + ry_d*ry_d
-            refl = max(0.0, 1.0 - refl_dist) if refl_dist < 1.0 else 0.0
-            
-            # Rim highlight
-            rim = math.pow(1.0 - nz, 2.0)
-            
-            r_col = int(min(255, r_base + refl * 150 + rim * 30))
-            g_col = int(min(255, g_base + refl * 180 + rim * 70))
-            b_col = int(min(255, b_base + refl * 220 + rim * 110))
-            
-            # Antialiasing at outer rim
-            alpha = 255
-            if dist > R - 1.0:
-                alpha = int(max(0, (R - dist) * 255))
-                
-            im.putpixel((x, y), (r_col, g_col, b_col, alpha))
-
-    # Glass dome sheen overlay
-    for y in range(6, 22):
-        for x in range(12, 36):
-            dx = x - cx
-            dy = (y - (cy - 5.5)) / 0.65
-            if dx*dx + dy*dy < 11.0*11.0:
-                p = im.getpixel((x, y))
-                glow = max(0, int((1.0 - (dx*dx + dy*dy)/(11.0*11.0)) * 75))
-                im.putpixel((x, y), (min(255, p[0] + glow), min(255, p[1] + glow), min(255, p[2] + glow), p[3]))
-                
-    # Windows 7 4-colored wavy flag in center
-    d = ImageDraw.Draw(im)
-    # Top-Left: Red pane (#EB3C28)
-    d.polygon([(16, 17), (22, 16), (22, 22), (16, 23)], fill=(235, 60, 40, 255))
-    # Top-Right: Green pane (#70C420)
-    d.polygon([(24, 16), (31, 15), (31, 21), (24, 22)], fill=(112, 196, 32, 255))
-    # Bottom-Left: Blue pane (#00A6F0)
-    d.polygon([(16, 24), (22, 23), (22, 29), (16, 30)], fill=(0, 166, 240, 255))
-    # Bottom-Right: Yellow pane (#FFBE00)
-    d.polygon([(24, 23), (31, 22), (31, 28), (24, 29)], fill=(255, 190, 0, 255))
-    
-    # Soft inner glass reflection over the flag
-    for y in range(16, 22):
-        for x in range(16, 31):
-            p = im.getpixel((x, y))
-            im.putpixel((x, y), (min(255, p[0] + 30), min(255, p[1] + 30), min(255, p[2] + 30), p[3]))
+    orb_src_path = find_win7_orb_source()
+    if not orb_src_path:
+        raise FileNotFoundError("win7_orb_256.png not found")
+    orb = Image.open(orb_src_path).convert("RGBA")
+    # Target size: 144x96 (48x32dp at 3x density). Center 31dp (93px) circular orb
+    W, H = 144, 96
+    canvas = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    orb_size = 93
+    orb_resized = orb.resize((orb_size, orb_size), Image.Resampling.LANCZOS)
+    offset_x = (W - orb_size) // 2
+    offset_y = (H - orb_size) // 2
+    canvas.paste(orb_resized, (offset_x, offset_y), orb_resized)
 
     dest_win7 = os.path.join(DRAWABLE_DIR, "start_button_win7.png")
-    im.save(dest_win7, "PNG")
-    print(f"[OK] Saved {dest_win7}: size={im.size}")
+    canvas.save(dest_win7, "PNG")
+    print(f"[OK] Saved {dest_win7}: size={canvas.size}")
 
 def generate_win11_button():
     # 4. Windows 11 Fluent 4-Square Logo (42x32)
@@ -175,15 +146,33 @@ def generate_win11_button():
     print(f"[OK] Saved {dest_win11}: size={im.size}")
 
 def generate_wallpapers():
-    # 5. wallpaper_win11.png (1024x600)
-    ref_win11_path = os.path.join(REF_DIR, "media_1791731909634_623ee14a.png")
-    if os.path.exists(ref_win11_path):
-        im11 = Image.open(ref_win11_path).convert("RGB")
-        desktop11 = im11.crop((0, 0, 1024, 648))
-        wall11 = desktop11.resize((1024, 600), Image.Resampling.LANCZOS)
-        dest11 = os.path.join(DRAWABLE_DIR, "wallpaper_win11.png")
-        wall11.save(dest11, "PNG")
-        print(f"[OK] Saved {dest11}: size={wall11.size}")
+    # 5. wallpaper_win11.png (1024x600 clean master Bloom wallpaper)
+    win11_src_path = find_win11_wallpaper_source()
+    if not win11_src_path:
+        raise FileNotFoundError("Windows 11 master wallpaper img0.jpg not found")
+    img = Image.open(win11_src_path).convert("RGB")
+    target_w, target_h = 1024, 600
+    src_w, src_h = img.size
+    target_aspect = target_w / target_h
+    src_aspect = src_w / src_h
+
+    if src_aspect > target_aspect:
+        crop_w = int(src_h * target_aspect)
+        crop_h = src_h
+        offset_x = (src_w - crop_w) // 2
+        offset_y = 0
+    else:
+        crop_w = src_w
+        crop_h = int(src_w / target_aspect)
+        offset_x = 0
+        offset_y = (src_h - crop_h) // 2
+
+    crop_box = (offset_x, offset_y, offset_x + crop_w, offset_y + crop_h)
+    cropped = img.crop(crop_box)
+    wall11 = cropped.resize((target_w, target_h), Image.Resampling.LANCZOS)
+    dest11 = os.path.join(DRAWABLE_DIR, "wallpaper_win11.png")
+    wall11.save(dest11, "PNG")
+    print(f"[OK] Saved {dest11}: size={wall11.size}")
 
     # 6. wallpaper_royale.png (1024x600 Energy Blue)
     bliss_path = os.path.join(DRAWABLE_DIR, "bliss_wallpaper.png")
@@ -226,6 +215,7 @@ def generate_wallpapers():
 
 if __name__ == "__main__":
     generate_luna_pill_buttons()
+    generate_start_button_royale()
     generate_win7_orb()
     generate_win11_button()
     generate_wallpapers()
