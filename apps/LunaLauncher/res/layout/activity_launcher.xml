@@ -478,6 +478,7 @@
 
             <!-- Right Column: System Places -->
             <LinearLayout
+                android:id="@+id/start_menu_right_pane"
                 android:layout_width="180dp"
                 android:layout_height="match_parent"
                 android:background="#D3E5FA"
@@ -518,6 +519,7 @@
                 </LinearLayout>
 
                 <View
+                    android:id="@+id/start_menu_right_divider"
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:layout_marginTop="6dp"
