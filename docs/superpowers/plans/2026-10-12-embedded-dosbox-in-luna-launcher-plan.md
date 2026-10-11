@@ -71,7 +71,7 @@ graph TD
 - Produces: `DosBoxConfigGenerator.generateConfigFile(File targetExe, File workingDir)` returns `File` pointing to a tailored `dosbox.conf`.
 - Produces: `DosBoxConfigGenerator.resolveDosPath(File androidFile)` returns DOS formatted path (e.g. `C:\GAMES\DOOM\DOOM.EXE`).
 
-- [ ] **Step 1: Write failing unit test for config generator**
+- [x] **Step 1: Write failing unit test for config generator**
 
 Create `tools/tests/DosBoxConfigTest.java`:
 ```java
@@ -113,12 +113,12 @@ public class DosBoxConfigTest {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `tools/run_tests.sh`  
 Expected: FAIL due to missing `DosBoxConfigGenerator` class.
 
-- [ ] **Step 3: Implement `DosBoxConfigGenerator.java`**
+- [x] **Step 3: Implement `DosBoxConfigGenerator.java`**
 
 Create `apps/LunaLauncher/src/com/windows/xp/launcher/dos/DosBoxConfigGenerator.java`:
 ```java
@@ -216,13 +216,13 @@ public class DosBoxConfigGenerator {
 }
 ```
 
-- [ ] **Step 4: Update test runner and run tests**
+- [x] **Step 4: Update test runner and run tests**
 
 Add `DosBoxConfigTest.java` to `tools/run_tests.sh` and execute:
 Run: `tools/run_tests.sh`  
 Expected: PASS with `DosBoxConfigTest: ALL TESTS PASSED`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add apps/LunaLauncher/src/com/windows/xp/launcher/dos/DosBoxConfigGenerator.java tools/tests/DosBoxConfigTest.java tools/run_tests.sh
 git commit -m "feat(dosbox): implement dynamic DOSBox configuration and path generator"
@@ -245,7 +245,7 @@ git commit -m "feat(dosbox): implement dynamic DOSBox configuration and path gen
   - `sendMotionEvent(int x, int y, int buttons)`
   - `stopEmulation()`
 
-- [ ] **Step 1: Create `DosBoxNative.java` bridge**
+- [x] **Step 1: Create `DosBoxNative.java` bridge**
 
 Create `apps/LunaLauncher/src/com/windows/xp/launcher/dos/DosBoxNative.java`:
 ```java
@@ -345,7 +345,7 @@ public class DosBoxNative {
 }
 ```
 
-- [ ] **Step 2: Update `tools/build_apk.sh` to package native libraries**
+- [x] **Step 2: Update `tools/build_apk.sh` to package native libraries**
 
 Ensure native `.so` files in `apps/LunaLauncher/lib/armeabi-v7a/` are bundled into the APK:
 ```bash
@@ -355,12 +355,12 @@ fi
 ```
 In `tools/build_apk.sh`, update packaging step to retain `lib/` directory inside `raw.apk`.
 
-- [ ] **Step 3: Verify APK packaging with native libraries**
+- [x] **Step 3: Verify APK packaging with native libraries**
 
 Run: `./tools/build_apk.sh apps/LunaLauncher apps/LunaLauncher/LunaLauncher.apk`  
 Expected: Build succeeds and packages native libs into `lib/armeabi-v7a/`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add apps/LunaLauncher/src/com/windows/xp/launcher/dos/DosBoxNative.java tools/build_apk.sh
 git commit -m "feat(dosbox): create DosBoxNative JNI bridge and update build script for native libraries"
@@ -379,7 +379,7 @@ git commit -m "feat(dosbox): create DosBoxNative JNI bridge and update build scr
 - Consumes: `DosBoxNative`, `DosBoxConfigGenerator`, `WindowFrameView`.
 - Produces: `DosBoxWindowView` which manages video rendering on a `SurfaceView` and exposes an on-screen gaming control bar (ESC, Enter, Space, Arrows, F1-F12).
 
-- [ ] **Step 1: Create layout `view_dosbox_window.xml`**
+- [x] **Step 1: Create layout `view_dosbox_window.xml`**
 
 Create `apps/LunaLauncher/res/layout/view_dosbox_window.xml`:
 ```xml
@@ -486,7 +486,7 @@ Create `apps/LunaLauncher/res/layout/view_dosbox_window.xml`:
 </RelativeLayout>
 ```
 
-- [ ] **Step 2: Implement `DosBoxWindowView.java`**
+- [x] **Step 2: Implement `DosBoxWindowView.java`**
 
 Create `apps/LunaLauncher/src/com/windows/xp/launcher/window/DosBoxWindowView.java`:
 ```java
@@ -628,11 +628,11 @@ public class DosBoxWindowView extends RelativeLayout implements SurfaceHolder.Ca
 }
 ```
 
-- [ ] **Step 3: Create icon `ic_dos_app.png`**
+- [x] **Step 3: Create icon `ic_dos_app.png`**
 
 Generate or provide authentic Windows MS-DOS application icon (`ic_dos_app.png`) in `apps/LunaLauncher/res/drawable/`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add apps/LunaLauncher/res/layout/view_dosbox_window.xml apps/LunaLauncher/src/com/windows/xp/launcher/window/DosBoxWindowView.java apps/LunaLauncher/res/drawable/ic_dos_app.png
 git commit -m "feat(dosbox): implement windowed DOSBox view container and quick touch keypad"
@@ -651,7 +651,7 @@ git commit -m "feat(dosbox): implement windowed DOSBox view container and quick 
 - Produces: `LauncherActivity.openDosApplication(File exeFile, String title, int iconRes)`
 - Produces: `ExplorerWindowView.FileActionListener.onOpenDosExecutable(File file)`
 
-- [ ] **Step 1: Add `openDosApplication` to `LauncherActivity.java`**
+- [x] **Step 1: Add `openDosApplication` to `LauncherActivity.java`**
 
 In [`LauncherActivity.java`](file:///c:/Users/gohil/Downloads/Samsung_Tab3_SM-T210_Tools/WindowsXP_ROM_Project/apps/LunaLauncher/src/com/windows/xp/launcher/LauncherActivity.java), add:
 ```java
@@ -676,7 +676,7 @@ public void openDosApplication(File exeFile, String title, int iconRes) {
 }
 ```
 
-- [ ] **Step 2: Update `ExplorerWindowView.java` to open `.EXE`, `.COM`, `.BAT`**
+- [x] **Step 2: Update `ExplorerWindowView.java` to open `.EXE`, `.COM`, `.BAT`**
 
 Add callback to `FileActionListener` interface:
 ```java
@@ -699,7 +699,7 @@ public void onOpenDosExecutable(File file) {
 }
 ```
 
-- [ ] **Step 3: Update `CmdPromptView.java` to execute DOS binaries**
+- [x] **Step 3: Update `CmdPromptView.java` to execute DOS binaries**
 
 In `CmdPromptView.executeCommand(...)`, detect if command points to an executable:
 ```java
@@ -716,12 +716,12 @@ if (target.exists() && target.isFile()) {
 }
 ```
 
-- [ ] **Step 4: Test build and compilation**
+- [x] **Step 4: Test build and compilation**
 
 Run: `./tools/build_apk.sh apps/LunaLauncher apps/LunaLauncher/LunaLauncher.apk`  
 Expected: Clean compilation with 0 errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add apps/LunaLauncher/src/com/windows/xp/launcher/LauncherActivity.java apps/LunaLauncher/src/com/windows/xp/launcher/window/ExplorerWindowView.java apps/LunaLauncher/src/com/windows/xp/launcher/window/CmdPromptView.java
 git commit -m "feat(dosbox): connect Explorer and Command Prompt to native DOS execution"
@@ -740,7 +740,7 @@ git commit -m "feat(dosbox): connect Explorer and Command Prompt to native DOS e
 - Produces: Direct Desktop shortcut icons for classic DOS programs (`Prince of Persia`, `DOOM`).
 - Produces: Seamless launch directly into the floating `WindowFrameView`.
 
-- [ ] **Step 1: Add DOS Desktop Shortcuts to `activity_launcher.xml`**
+- [x] **Step 1: Add DOS Desktop Shortcuts to `activity_launcher.xml`**
 
 Add desktop grid items for DOS games:
 ```xml
@@ -769,7 +769,7 @@ Add desktop grid items for DOS games:
 </LinearLayout>
 ```
 
-- [ ] **Step 2: Bind desktop click handlers in `LauncherActivity.java`**
+- [x] **Step 2: Bind desktop click handlers in `LauncherActivity.java`**
 
 ```java
 View princeIcon = findViewById(R.id.icon_dos_prince);
@@ -785,17 +785,17 @@ if (princeIcon != null) {
 }
 ```
 
-- [ ] **Step 3: Update `cook_windows_xp_rom.sh`**
+- [x] **Step 3: Update `cook_windows_xp_rom.sh`**
 
 Ensure `/sdcard/DOS` directory is created and sample shareware DOS executables (`PRINCE.EXE`, `DOOM.EXE`) are bundled into `/system/media/dos/` or installed to storage during first boot.
 
-- [ ] **Step 4: End-to-end verification and regression tests**
+- [x] **Step 4: End-to-end verification and regression tests**
 
 Run: `tools/run_tests.sh`  
 Run: `./tools/build_apk.sh apps/LunaLauncher apps/LunaLauncher/LunaLauncher.apk`  
 Expected: All regression tests pass and final APK builds successfully.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add apps/LunaLauncher/res/layout/activity_launcher.xml apps/LunaLauncher/src/com/windows/xp/launcher/LauncherActivity.java tools/cook_windows_xp_rom.sh
 git commit -m "feat(dosbox): add desktop shortcuts for DOS applications and integrate with ROM build"
