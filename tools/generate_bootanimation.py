@@ -65,9 +65,10 @@ def generate():
         except Exception:
             font_micro = font_win = font_xp = ImageFont.load_default()
 
-        draw.text((logo_cx - 90, logo_cy + 36), "Microsoft", fill=(180, 180, 180), font=font_micro)
-        draw.text((logo_cx - 100, logo_cy + 56), "Windows", fill=(255, 255, 255), font=font_win)
-        draw.text((logo_cx + 70, logo_cy + 50), "XP", fill=(215, 60, 15), font=font_xp)
+        draw.text((logo_cx - 105, logo_cy + 36), "Microsoft", fill=(180, 180, 180), font=font_micro)
+        draw.text((logo_cx - 118, logo_cy + 56), "Windows", fill=(255, 255, 255), font=font_win)
+        draw.text((logo_cx + 80, logo_cy + 50), "MK", fill=(215, 60, 15), font=font_xp)
+        draw.text((logo_cx + 162, logo_cy + 52), "®", fill=(215, 60, 15), font=font_micro)
 
         # Draw rounded progress track
         draw.rounded_rectangle([track_x, track_y, track_x + track_w, track_y + track_h], radius=4, fill=(4, 12, 35), outline=(30, 60, 120), width=2)

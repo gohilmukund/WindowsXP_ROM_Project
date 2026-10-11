@@ -1,11 +1,20 @@
 package com.windows.xp.launcher.window;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Environment;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
@@ -14,13 +23,19 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.windows.xp.launcher.R;
 import com.windows.xp.launcher.theme.ThemeManager;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DisplayPropertiesWindowView extends LinearLayout {
 
@@ -30,13 +45,21 @@ public class DisplayPropertiesWindowView extends LinearLayout {
 
     private OnDialogActionListener actionListener;
     private ThemeManager.Theme selectedTheme;
-    private CrtPreviewView crtPreview;
+    private ThemeManager.WallpaperItem selectedWallpaper;
+
+    private CrtPreviewView crtThemePreview;
+    private CrtPreviewView crtDesktopPreview;
+
     private FrameLayout tabContentContainer;
     private View tabThemes;
     private View tabDesktop;
 
     private TextView btnTabThemes;
     private TextView btnTabDesktop;
+    private Button btnApply;
+
+    private final List<ThemeManager.WallpaperItem> wallpaperList = new ArrayList<ThemeManager.WallpaperItem>();
+    private LinearLayout wallpaperListContainer;
 
     public DisplayPropertiesWindowView(Context context) {
         super(context);
@@ -57,7 +80,9 @@ public class DisplayPropertiesWindowView extends LinearLayout {
         setBackgroundColor(0xFFECE9D8);
         setPadding(dpToPx(12), dpToPx(8), dpToPx(12), dpToPx(10));
 
-        selectedTheme = ThemeManager.getInstance().getCurrentTheme();
+        ThemeManager tm = ThemeManager.getInstance();
+        tm.init(context);
+        selectedTheme = tm.getCurrentTheme();
 
         // 1. Tab Bar
         LinearLayout tabBar = new LinearLayout(context);
@@ -100,11 +125,12 @@ public class DisplayPropertiesWindowView extends LinearLayout {
 
         Button btnOk = createDialogButton(context, "OK");
         Button btnCancel = createDialogButton(context, "Cancel");
-        final Button btnApply = createDialogButton(context, "Apply");
+        btnApply = createDialogButton(context, "Apply");
+        btnApply.setEnabled(false);
 
         btnOk.setOnClickListener(new OnClickListener() {
             @Override public void onClick(View v) {
-                applyTheme();
+                applyChanges();
                 if (actionListener != null) actionListener.onClose();
             }
         });
@@ -115,7 +141,7 @@ public class DisplayPropertiesWindowView extends LinearLayout {
         });
         btnApply.setOnClickListener(new OnClickListener() {
             @Override public void onClick(View v) {
-                applyTheme();
+                applyChanges();
                 btnApply.setEnabled(false);
             }
         });
@@ -128,9 +154,29 @@ public class DisplayPropertiesWindowView extends LinearLayout {
         selectTab(0);
     }
 
-    private void applyTheme() {
-        ThemeManager.getInstance().setTheme(selectedTheme);
-        Toast.makeText(getContext(), "Theme Applied: " + selectedTheme.getDisplayName(), Toast.LENGTH_SHORT).show();
+    private void applyChanges() {
+        ThemeManager tm = ThemeManager.getInstance();
+        boolean changed = false;
+
+        // Apply theme if changed
+        if (selectedTheme != tm.getCurrentTheme()) {
+            tm.setTheme(selectedTheme);
+            changed = true;
+        }
+
+        // Apply wallpaper if explicitly selected
+        if (selectedWallpaper != null) {
+            if (selectedWallpaper.isCustom()) {
+                tm.setUserWallpaperPath(selectedWallpaper.getFilePath());
+            } else {
+                tm.setUserWallpaperRes(selectedWallpaper.getResId());
+            }
+            changed = true;
+        }
+
+        if (changed) {
+            Toast.makeText(getContext(), "Display settings applied", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private TextView createTabButton(Context context, String label, boolean active) {
@@ -175,7 +221,6 @@ public class DisplayPropertiesWindowView extends LinearLayout {
         tvDesc.setTextColor(Color.BLACK);
         layout.addView(tvDesc);
 
-        // Theme Dropdown / Selector
         TextView tvLbl = new TextView(context);
         tvLbl.setText("Theme:");
         tvLbl.setTypeface(null, Typeface.BOLD);
@@ -200,9 +245,10 @@ public class DisplayPropertiesWindowView extends LinearLayout {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 selectedTheme = themes[position];
-                if (crtPreview != null) {
-                    crtPreview.setPreviewTheme(selectedTheme);
+                if (crtThemePreview != null) {
+                    crtThemePreview.setPreviewTheme(selectedTheme);
                 }
+                if (btnApply != null) btnApply.setEnabled(true);
             }
 
             @Override public void onNothingSelected(AdapterView<?> parent) {}
@@ -217,51 +263,270 @@ public class DisplayPropertiesWindowView extends LinearLayout {
         tvSample.setTextColor(Color.BLACK);
         layout.addView(tvSample);
 
-        crtPreview = new CrtPreviewView(context);
-        crtPreview.setLayoutParams(new LayoutParams(dpToPx(240), dpToPx(140)));
-        crtPreview.setPreviewTheme(selectedTheme);
-        layout.addView(crtPreview);
+        crtThemePreview = new CrtPreviewView(context);
+        crtThemePreview.setLayoutParams(new LayoutParams(dpToPx(240), dpToPx(130)));
+        crtThemePreview.setPreviewTheme(selectedTheme);
+        layout.addView(crtThemePreview);
 
         scroll.addView(layout);
         tabThemes = scroll;
     }
 
-    private void buildDesktopTab(Context context) {
-        ScrollView scroll = new ScrollView(context);
+    private void buildDesktopTab(final Context context) {
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(VERTICAL);
 
-        TextView tvDesc = new TextView(context);
-        tvDesc.setText("Select a background wallpaper for your desktop:\n");
-        tvDesc.setTextSize(11);
-        tvDesc.setTextColor(Color.BLACK);
-        layout.addView(tvDesc);
+        // 1. Top: CRT Monitor Preview
+        LinearLayout previewContainer = new LinearLayout(context);
+        previewContainer.setGravity(Gravity.CENTER);
+        previewContainer.setPadding(0, 0, 0, dpToPx(6));
 
-        addWallpaperOption(layout, "Bliss (Windows XP Default)", ThemeManager.Theme.LUNA_BLUE);
-        addWallpaperOption(layout, "Windows Classic Teal", ThemeManager.Theme.CLASSIC);
-        addWallpaperOption(layout, "Windows Vista Aurora", ThemeManager.Theme.VISTA);
-        addWallpaperOption(layout, "Windows 7 Harmony Blue", ThemeManager.Theme.WIN7_AERO);
+        crtDesktopPreview = new CrtPreviewView(context);
+        crtDesktopPreview.setLayoutParams(new LayoutParams(dpToPx(200), dpToPx(115)));
+        crtDesktopPreview.setPreviewTheme(selectedTheme);
+        previewContainer.addView(crtDesktopPreview);
+        layout.addView(previewContainer);
 
-        scroll.addView(layout);
-        tabDesktop = scroll;
-    }
+        // 2. Middle: "Background:" Label
+        TextView tvLabel = new TextView(context);
+        tvLabel.setText("Background:");
+        tvLabel.setTextSize(11);
+        tvLabel.setTypeface(null, Typeface.BOLD);
+        tvLabel.setTextColor(Color.BLACK);
+        tvLabel.setPadding(0, 0, 0, dpToPx(4));
+        layout.addView(tvLabel);
 
-    private void addWallpaperOption(LinearLayout parent, final String name, final ThemeManager.Theme theme) {
-        TextView tv = new TextView(parent.getContext());
-        tv.setText("• " + name);
-        tv.setTextSize(12);
-        tv.setTextColor(0xFF00138C);
-        tv.setPadding(0, dpToPx(6), 0, dpToPx(6));
-        tv.setClickable(true);
-        tv.setOnClickListener(new OnClickListener() {
+        // 3. Selection row: Wallpaper List Box (Left) + Buttons (Right)
+        LinearLayout selectRow = new LinearLayout(context);
+        selectRow.setOrientation(HORIZONTAL);
+        selectRow.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
+
+        // Bordered scrollable list box (XP Style inset)
+        FrameLayout listBoxBorder = new FrameLayout(context);
+        LayoutParams listLp = new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f);
+        listBoxBorder.setLayoutParams(listLp);
+        listBoxBorder.setBackgroundColor(Color.WHITE);
+
+        // 3D Inset border
+        GradientDrawable borderDrawable = new GradientDrawable();
+        borderDrawable.setColor(Color.WHITE);
+        borderDrawable.setStroke(dpToPx(1), 0xFF7F9DB9);
+        listBoxBorder.setBackgroundDrawable(borderDrawable);
+
+        ScrollView listScroll = new ScrollView(context);
+        listScroll.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        wallpaperListContainer = new LinearLayout(context);
+        wallpaperListContainer.setOrientation(VERTICAL);
+        wallpaperListContainer.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        populateWallpaperList(context);
+
+        listScroll.addView(wallpaperListContainer);
+        listBoxBorder.addView(listScroll);
+        selectRow.addView(listBoxBorder);
+
+        // Right side button panel
+        LinearLayout rightButtons = new LinearLayout(context);
+        rightButtons.setOrientation(VERTICAL);
+        LayoutParams rightLp = new LayoutParams(dpToPx(85), ViewGroup.LayoutParams.WRAP_CONTENT);
+        rightLp.leftMargin = dpToPx(8);
+        rightButtons.setLayoutParams(rightLp);
+
+        Button btnBrowse = createDialogButton(context, "Browse...");
+        LayoutParams bLp = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(28));
+        bLp.leftMargin = 0;
+        btnBrowse.setLayoutParams(bLp);
+        btnBrowse.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                selectedTheme = theme;
-                if (crtPreview != null) crtPreview.setPreviewTheme(selectedTheme);
-                applyTheme();
+                openBrowseDialog(context);
             }
         });
-        parent.addView(tv);
+        rightButtons.addView(btnBrowse);
+
+        selectRow.addView(rightButtons);
+        layout.addView(selectRow);
+
+        tabDesktop = layout;
+    }
+
+    private void populateWallpaperList(Context context) {
+        ThemeManager tm = ThemeManager.getInstance();
+        wallpaperList.clear();
+
+        // 1. If user currently has a custom wallpaper path, put it at top
+        String customPath = tm.getUserWallpaperPath();
+        if (customPath != null && new File(customPath).exists()) {
+            File f = new File(customPath);
+            ThemeManager.WallpaperItem customItem = new ThemeManager.WallpaperItem(f.getName(), customPath);
+            wallpaperList.add(customItem);
+            selectedWallpaper = customItem;
+        }
+
+        // 2. Built-in authentic wallpapers
+        List<ThemeManager.WallpaperItem> builtIns = tm.getBuiltInWallpapers();
+        wallpaperList.addAll(builtIns);
+
+        // Determine initial selected wallpaper if not already set by custom
+        if (selectedWallpaper == null) {
+            int currentRes = tm.getUserWallpaperRes();
+            if (currentRes > 0) {
+                for (ThemeManager.WallpaperItem item : wallpaperList) {
+                    if (item.getResId() == currentRes) {
+                        selectedWallpaper = item;
+                        break;
+                    }
+                }
+            } else {
+                int themeDefaultRes = tm.getWallpaperRes();
+                for (ThemeManager.WallpaperItem item : wallpaperList) {
+                    if (item.getResId() == themeDefaultRes) {
+                        selectedWallpaper = item;
+                        break;
+                    }
+                }
+            }
+            if (selectedWallpaper == null && !wallpaperList.isEmpty()) {
+                selectedWallpaper = wallpaperList.get(0);
+            }
+        }
+
+        // Set initial CRT preview
+        if (crtDesktopPreview != null && selectedWallpaper != null) {
+            crtDesktopPreview.setPreviewWallpaper(selectedWallpaper.getResId(), selectedWallpaper.getFilePath());
+        }
+
+        renderWallpaperListRows(context);
+    }
+
+    private void renderWallpaperListRows(final Context context) {
+        if (wallpaperListContainer == null) return;
+        wallpaperListContainer.removeAllViews();
+
+        for (int i = 0; i < wallpaperList.size(); i++) {
+            final ThemeManager.WallpaperItem item = wallpaperList.get(i);
+            final LinearLayout row = new LinearLayout(context);
+            row.setOrientation(HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(dpToPx(6), dpToPx(4), dpToPx(6), dpToPx(4));
+            row.setClickable(true);
+
+            boolean isSelected = (selectedWallpaper != null && item == selectedWallpaper);
+
+            // Icon
+            ImageView ivIcon = new ImageView(context);
+            ivIcon.setLayoutParams(new LayoutParams(dpToPx(16), dpToPx(16)));
+            ivIcon.setImageResource(R.drawable.ic_display);
+            row.addView(ivIcon);
+
+            // Label
+            TextView tv = new TextView(context);
+            tv.setText(" " + item.getName());
+            tv.setTextSize(11);
+            tv.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            if (isSelected) {
+                row.setBackgroundColor(0xFF316AC5); // XP selection blue
+                tv.setTextColor(Color.WHITE);
+            } else {
+                row.setBackgroundColor(Color.TRANSPARENT);
+                tv.setTextColor(Color.BLACK);
+            }
+
+            row.addView(tv);
+
+            row.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    selectedWallpaper = item;
+                    if (crtDesktopPreview != null) {
+                        crtDesktopPreview.setPreviewWallpaper(item.getResId(), item.getFilePath());
+                    }
+                    if (btnApply != null) {
+                        btnApply.setEnabled(true);
+                    }
+                    renderWallpaperListRows(context);
+                }
+            });
+
+            wallpaperListContainer.addView(row);
+        }
+    }
+
+    private void openBrowseDialog(final Context context) {
+        // Collect candidate image directories
+        final List<File> candidateDirs = new ArrayList<File>();
+        File picturesDir = new File("/sdcard/Pictures");
+        if (picturesDir.exists()) candidateDirs.add(picturesDir);
+
+        File dcimCamera = new File("/sdcard/DCIM/Camera");
+        if (dcimCamera.exists()) candidateDirs.add(dcimCamera);
+
+        File dcim = new File("/sdcard/DCIM");
+        if (dcim.exists() && !candidateDirs.contains(dcimCamera)) candidateDirs.add(dcim);
+
+        File downloadDir = new File("/sdcard/Download");
+        if (downloadDir.exists()) candidateDirs.add(downloadDir);
+
+        File sdcard = new File("/sdcard");
+        if (sdcard.exists() && !candidateDirs.contains(sdcard)) candidateDirs.add(sdcard);
+
+        // Gather all image files
+        final List<File> imageFiles = new ArrayList<File>();
+        for (File dir : candidateDirs) {
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isFile()) {
+                        String name = f.getName().toLowerCase();
+                        if (name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") ||
+                            name.endsWith(".webp") || name.endsWith(".bmp")) {
+                            imageFiles.add(f);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (imageFiles.isEmpty()) {
+            AlertDialog.Builder alert = new AlertDialog.Builder(context);
+            alert.setTitle("Browse for Background");
+            alert.setMessage("No image files found on device storage (/sdcard/Pictures, /sdcard/DCIM, /sdcard/Download).\n\nPlease add images to your Pictures folder first.");
+            alert.setPositiveButton("OK", null);
+            alert.show();
+            return;
+        }
+
+        String[] fileNames = new String[imageFiles.size()];
+        for (int i = 0; i < imageFiles.size(); i++) {
+            File f = imageFiles.get(i);
+            fileNames[i] = f.getName() + " (" + (f.length() / 1024) + " KB)";
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("Select a Background Image");
+        builder.setItems(fileNames, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                File chosen = imageFiles.get(which);
+                ThemeManager.WallpaperItem customItem = new ThemeManager.WallpaperItem(chosen.getName(), chosen.getAbsolutePath());
+
+                // Insert at top of list and select
+                wallpaperList.add(0, customItem);
+                selectedWallpaper = customItem;
+
+                if (crtDesktopPreview != null) {
+                    crtDesktopPreview.setPreviewWallpaper(0, chosen.getAbsolutePath());
+                }
+                if (btnApply != null) {
+                    btnApply.setEnabled(true);
+                }
+                renderWallpaperListRows(context);
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
     }
 
     private Button createDialogButton(Context context, String text) {
@@ -282,14 +547,57 @@ public class DisplayPropertiesWindowView extends LinearLayout {
     // --- Miniature CRT Monitor Preview View ---
     private static class CrtPreviewView extends View {
         private ThemeManager.Theme previewTheme = ThemeManager.Theme.LUNA_BLUE;
+        private Drawable previewWallpaperDrawable = null;
+        private Bitmap previewWallpaperBitmap = null;
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
         public CrtPreviewView(Context context) {
             super(context);
+            initDefaultWallpaper();
+        }
+
+        private void initDefaultWallpaper() {
+            try {
+                previewWallpaperDrawable = getResources().getDrawable(R.drawable.bliss_wallpaper);
+            } catch (Exception ignored) {}
         }
 
         public void setPreviewTheme(ThemeManager.Theme t) {
             this.previewTheme = t;
+            int wallRes = getThemeDefaultWallRes(t);
+            setPreviewWallpaper(wallRes, null);
+            invalidate();
+        }
+
+        private int getThemeDefaultWallRes(ThemeManager.Theme t) {
+            switch (t) {
+                case CLASSIC: return R.drawable.wallpaper_classic;
+                case VISTA: return R.drawable.wallpaper_vista;
+                case WIN7_AERO: return R.drawable.wallpaper_win7;
+                case LUNA_OLIVE: return R.drawable.wallpaper_olive;
+                case LUNA_SILVER: return R.drawable.wallpaper_silver;
+                case LUNA_BLUE:
+                default:
+                    return R.drawable.bliss_wallpaper;
+            }
+        }
+
+        public void setPreviewWallpaper(int resId, String filePath) {
+            if (filePath != null) {
+                try {
+                    previewWallpaperBitmap = ThemeManager.decodeSampledBitmapFromFile(filePath, 240, 140);
+                    previewWallpaperDrawable = null;
+                } catch (Exception e) {
+                    previewWallpaperBitmap = null;
+                }
+            } else if (resId > 0) {
+                previewWallpaperBitmap = null;
+                try {
+                    previewWallpaperDrawable = getResources().getDrawable(resId);
+                } catch (Exception e) {
+                    previewWallpaperDrawable = null;
+                }
+            }
             invalidate();
         }
 
@@ -335,7 +643,7 @@ public class DisplayPropertiesWindowView extends LinearLayout {
                     taskbarColor = 0xFFB4BAC9;
                     titleStart = 0xFFE2E4EB;
                     titleEnd = 0xFFA6ABB8;
-                    startBtnColor = 0xFFB8BED0;
+                    startBtnColor = 0xFF3C9E35;
                     break;
                 case CLASSIC:
                     wallColor = 0xFF008080;
@@ -361,8 +669,20 @@ public class DisplayPropertiesWindowView extends LinearLayout {
             }
 
             // Desktop wallpaper
-            paint.setColor(wallColor);
-            canvas.drawRect(screenX, screenY, screenX + screenW, screenY + screenH, paint);
+            canvas.save();
+            canvas.clipRect(screenX, screenY, screenX + screenW, screenY + screenH);
+            if (previewWallpaperBitmap != null && !previewWallpaperBitmap.isRecycled()) {
+                Rect src = new Rect(0, 0, previewWallpaperBitmap.getWidth(), previewWallpaperBitmap.getHeight());
+                Rect dst = new Rect(screenX, screenY, screenX + screenW, screenY + screenH);
+                canvas.drawBitmap(previewWallpaperBitmap, src, dst, paint);
+            } else if (previewWallpaperDrawable != null) {
+                previewWallpaperDrawable.setBounds(screenX, screenY, screenX + screenW, screenY + screenH);
+                previewWallpaperDrawable.draw(canvas);
+            } else {
+                paint.setColor(wallColor);
+                canvas.drawRect(screenX, screenY, screenX + screenW, screenY + screenH, paint);
+            }
+            canvas.restore();
 
             // Sample Window on screen
             int winX = screenX + 24;
@@ -389,6 +709,18 @@ public class DisplayPropertiesWindowView extends LinearLayout {
             // Start button
             paint.setColor(startBtnColor);
             canvas.drawRect(screenX, screenY + screenH - 10, screenX + 26, screenY + screenH, paint);
+
+            // Sample Active Taskbar Tab Button
+            int tabColor = 0xFF16398A;
+            switch (previewTheme) {
+                case LUNA_OLIVE: tabColor = 0xFF465F29; break;
+                case LUNA_SILVER: tabColor = 0xFF969CAE; break;
+                case CLASSIC: tabColor = 0xFFC8C4BC; break;
+                case VISTA: tabColor = 0xFF284A6E; break;
+                case WIN7_AERO: tabColor = 0xFF4E92CC; break;
+            }
+            paint.setColor(tabColor);
+            canvas.drawRect(screenX + 28, screenY + screenH - 9, screenX + 62, screenY + screenH - 1, paint);
         }
     }
 }

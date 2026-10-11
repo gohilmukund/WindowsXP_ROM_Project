@@ -1,13 +1,48 @@
 package com.windows.xp.launcher.theme;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.view.View;
 import com.windows.xp.launcher.R;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ThemeManager {
+
+    public static class WallpaperItem {
+        private final String name;
+        private final int resId;
+        private final String filePath;
+
+        public WallpaperItem(String name, int resId) {
+            this.name = name;
+            this.resId = resId;
+            this.filePath = null;
+        }
+
+        public WallpaperItem(String name, String filePath) {
+            this.name = name;
+            this.resId = -1;
+            this.filePath = filePath;
+        }
+
+        public String getName() { return name; }
+        public int getResId() { return resId; }
+        public String getFilePath() { return filePath; }
+        public boolean isCustom() { return filePath != null; }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
 
     public enum Theme {
         LUNA_BLUE("Windows XP (Default Blue)"),
@@ -32,8 +67,16 @@ public class ThemeManager {
         void onThemeChanged(Theme newTheme);
     }
 
+    private static final String PREF_NAME = "xp_theme_prefs";
+    private static final String KEY_THEME = "current_theme";
+    private static final String KEY_WALLPAPER_RES = "wallpaper_res";
+    private static final String KEY_WALLPAPER_PATH = "wallpaper_path";
+
     private static ThemeManager instance;
     private Theme currentTheme = Theme.LUNA_BLUE;
+    private int userWallpaperRes = -1;
+    private String userWallpaperPath = null;
+    private Context appContext;
     private final List<OnThemeChangeListener> listeners = new ArrayList<OnThemeChangeListener>();
 
     public static synchronized ThemeManager getInstance() {
@@ -45,6 +88,41 @@ public class ThemeManager {
 
     private ThemeManager() {}
 
+    public void init(Context context) {
+        if (context == null) return;
+        if (this.appContext == null) {
+            this.appContext = context.getApplicationContext();
+            loadPreferences();
+        }
+    }
+
+    private void loadPreferences() {
+        if (appContext == null) return;
+        try {
+            SharedPreferences sp = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+            String themeStr = sp.getString(KEY_THEME, null);
+            if (themeStr != null) {
+                try {
+                    this.currentTheme = Theme.valueOf(themeStr);
+                } catch (Exception ignored) {}
+            }
+            this.userWallpaperRes = sp.getInt(KEY_WALLPAPER_RES, -1);
+            this.userWallpaperPath = sp.getString(KEY_WALLPAPER_PATH, null);
+        } catch (Exception ignored) {}
+    }
+
+    private void savePreferences() {
+        if (appContext == null) return;
+        try {
+            SharedPreferences sp = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sp.edit();
+            editor.putString(KEY_THEME, currentTheme.name());
+            editor.putInt(KEY_WALLPAPER_RES, userWallpaperRes);
+            editor.putString(KEY_WALLPAPER_PATH, userWallpaperPath);
+            editor.apply();
+        } catch (Exception ignored) {}
+    }
+
     public Theme getCurrentTheme() {
         return currentTheme;
     }
@@ -52,7 +130,111 @@ public class ThemeManager {
     public void setTheme(Theme theme) {
         if (this.currentTheme != theme) {
             this.currentTheme = theme;
+            this.userWallpaperRes = -1;
+            this.userWallpaperPath = null;
+            savePreferences();
             notifyListeners();
+        }
+    }
+
+    public void setUserWallpaperRes(int resId) {
+        this.userWallpaperRes = resId;
+        this.userWallpaperPath = null;
+        savePreferences();
+        notifyListeners();
+    }
+
+    public void setUserWallpaperPath(String path) {
+        this.userWallpaperPath = path;
+        this.userWallpaperRes = -1;
+        savePreferences();
+        notifyListeners();
+    }
+
+    public int getUserWallpaperRes() {
+        return userWallpaperRes;
+    }
+
+    public String getUserWallpaperPath() {
+        return userWallpaperPath;
+    }
+
+    public boolean hasCustomWallpaper() {
+        return (userWallpaperPath != null && new File(userWallpaperPath).exists()) || userWallpaperRes > 0;
+    }
+
+    public void clearCustomWallpaper() {
+        this.userWallpaperRes = -1;
+        this.userWallpaperPath = null;
+        savePreferences();
+        notifyListeners();
+    }
+
+    public List<WallpaperItem> getBuiltInWallpapers() {
+        List<WallpaperItem> list = new ArrayList<WallpaperItem>();
+        list.add(new WallpaperItem("Bliss (Windows XP Default)", R.drawable.bliss_wallpaper));
+        list.add(new WallpaperItem("Autumn", R.drawable.wallpaper_autumn));
+        list.add(new WallpaperItem("Azul", R.drawable.wallpaper_azul));
+        list.add(new WallpaperItem("Red moon desert", R.drawable.wallpaper_desert));
+        list.add(new WallpaperItem("Stonehenge", R.drawable.wallpaper_stonehenge));
+        list.add(new WallpaperItem("Tulips", R.drawable.wallpaper_tulips));
+        list.add(new WallpaperItem("Wind", R.drawable.wallpaper_wind));
+        list.add(new WallpaperItem("Silver", R.drawable.wallpaper_silver));
+        list.add(new WallpaperItem("Olive Green", R.drawable.wallpaper_olive));
+        list.add(new WallpaperItem("Windows Classic Teal", R.drawable.wallpaper_classic));
+        list.add(new WallpaperItem("Windows Vista Aurora", R.drawable.wallpaper_vista));
+        list.add(new WallpaperItem("Windows 7 Harmony", R.drawable.wallpaper_win7));
+        return list;
+    }
+
+    public void applyWallpaperToView(View desktop) {
+        if (desktop == null) return;
+        Context ctx = desktop.getContext();
+        if (userWallpaperPath != null) {
+            File f = new File(userWallpaperPath);
+            if (f.exists()) {
+                Bitmap bmp = decodeSampledBitmapFromFile(userWallpaperPath, 1024, 600);
+                if (bmp != null) {
+                    desktop.setBackgroundDrawable(new BitmapDrawable(ctx.getResources(), bmp));
+                    return;
+                }
+            }
+        }
+        if (userWallpaperRes > 0) {
+            try {
+                desktop.setBackgroundResource(userWallpaperRes);
+                return;
+            } catch (Throwable ignored) {}
+        }
+        desktop.setBackgroundResource(getWallpaperRes());
+    }
+
+    public static Bitmap decodeSampledBitmapFromFile(String path, int reqWidth, int reqHeight) {
+        try {
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(path, options);
+
+            if (options.outWidth <= 0 || options.outHeight <= 0) {
+                return null;
+            }
+
+            int inSampleSize = 1;
+            if (options.outHeight > reqHeight || options.outWidth > reqWidth) {
+                final int halfHeight = options.outHeight / 2;
+                final int halfWidth = options.outWidth / 2;
+                while ((halfHeight / inSampleSize) >= reqHeight && (halfWidth / inSampleSize) >= reqWidth) {
+                    inSampleSize *= 2;
+                }
+            }
+
+            options.inSampleSize = inSampleSize;
+            options.inJustDecodeBounds = false;
+            options.inPreferredConfig = Bitmap.Config.RGB_565;
+            return BitmapFactory.decodeFile(path, options);
+        } catch (Throwable t) {
+            t.printStackTrace();
+            return null;
         }
     }
 
@@ -159,6 +341,42 @@ public class ThemeManager {
         }
     }
 
+    public int getTaskbarTabBgRes() {
+        switch (currentTheme) {
+            case LUNA_OLIVE: return R.drawable.taskbar_tab_bg_olive;
+            case LUNA_SILVER: return R.drawable.taskbar_tab_bg_silver;
+            case CLASSIC: return R.drawable.taskbar_tab_bg_classic;
+            case VISTA: return R.drawable.taskbar_tab_bg_vista;
+            case WIN7_AERO: return R.drawable.taskbar_tab_bg_win7;
+            case LUNA_BLUE:
+            default:
+                return R.drawable.taskbar_tab_bg;
+        }
+    }
+
+    public int getTaskbarTabActiveRes() {
+        switch (currentTheme) {
+            case LUNA_OLIVE: return R.drawable.taskbar_tab_active_olive;
+            case LUNA_SILVER: return R.drawable.taskbar_tab_active_silver;
+            case CLASSIC: return R.drawable.taskbar_tab_active_classic;
+            case VISTA: return R.drawable.taskbar_tab_active_vista;
+            case WIN7_AERO: return R.drawable.taskbar_tab_active_win7;
+            case LUNA_BLUE:
+            default:
+                return R.drawable.taskbar_tab_active;
+        }
+    }
+
+    public int getTaskbarTabTextColor() {
+        switch (currentTheme) {
+            case LUNA_SILVER:
+            case CLASSIC:
+                return 0xFF000000;
+            default:
+                return 0xFFFFFFFF;
+        }
+    }
+
     public int getStartButtonBgRes() {
         return getAuthenticStartButtonRes();
     }
@@ -166,7 +384,7 @@ public class ThemeManager {
     public int getAuthenticStartButtonRes() {
         switch (currentTheme) {
             case LUNA_OLIVE: return R.drawable.start_button_luna_olive;
-            case LUNA_SILVER: return R.drawable.start_button_luna_silver;
+            case LUNA_SILVER: return R.drawable.start_button_luna_blue;
             case CLASSIC: return R.drawable.start_button_classic;
             case VISTA: return R.drawable.start_button_vista;
             case WIN7_AERO: return R.drawable.start_button_win7;

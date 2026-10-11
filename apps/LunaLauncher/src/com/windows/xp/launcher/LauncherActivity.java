@@ -181,6 +181,7 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
         setupDesktopIcons();
         setupStartMenuItems();
 
+        ThemeManager.getInstance().init(this);
         ThemeManager.getInstance().addListener(this);
         onThemeChanged(ThemeManager.getInstance().getCurrentTheme());
 
@@ -257,6 +258,9 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
         }
         if (intent.getBooleanExtra("show_volume", false)) {
             showVolumeControlPopup(false);
+        }
+        if (intent.getBooleanExtra("open_display_properties", false)) {
+            openDisplayProperties();
         }
     }
 
@@ -1046,7 +1050,7 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
         ThemeManager tm = ThemeManager.getInstance();
         View desktop = findViewById(R.id.root_desktop);
         if (desktop != null) {
-            desktop.setBackgroundResource(tm.getWallpaperRes());
+            tm.applyWallpaperToView(desktop);
         }
         View taskbar = findViewById(R.id.taskbar);
         if (taskbar != null) {
@@ -1511,6 +1515,7 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
 
     private void refreshTaskbarTabs() {
         taskbarTabsContainer.removeAllViews();
+        ThemeManager tm = ThemeManager.getInstance();
 
         // 1. Render Tabs for Open Floating Windows
         for (final WindowFrameView window : openWindows) {
@@ -1520,9 +1525,9 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
 
             boolean isCurrentActive = (window == activeWindow && window.getVisibility() == View.VISIBLE);
             if (isCurrentActive) {
-                tab.setBackgroundResource(R.drawable.taskbar_tab_active);
+                tab.setBackgroundResource(tm.getTaskbarTabActiveRes());
             } else {
-                tab.setBackgroundResource(R.drawable.taskbar_tab_bg);
+                tab.setBackgroundResource(tm.getTaskbarTabBgRes());
             }
             tab.setPadding(dpToPx(8), dpToPx(2), dpToPx(10), dpToPx(2));
             tab.setClickable(true);
@@ -1536,7 +1541,10 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
 
             TextView tv = new TextView(this);
             tv.setText(window.getTitle());
-            tv.setTextColor(0xFFFFFFFF);
+            tv.setTextColor(tm.getTaskbarTabTextColor());
+            if (isCurrentActive) {
+                tv.setTypeface(Typeface.DEFAULT_BOLD);
+            }
             tv.setTextSize(11);
             tv.setMaxLines(1);
             LinearLayout.LayoutParams tvP = new LinearLayout.LayoutParams(
@@ -1589,7 +1597,7 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
                 LinearLayout tab = new LinearLayout(this);
                 tab.setOrientation(LinearLayout.HORIZONTAL);
                 tab.setGravity(android.view.Gravity.CENTER_VERTICAL);
-                tab.setBackgroundResource(R.drawable.taskbar_tab_bg);
+                tab.setBackgroundResource(tm.getTaskbarTabBgRes());
                 tab.setPadding(dpToPx(8), dpToPx(2), dpToPx(10), dpToPx(2));
                 tab.setClickable(true);
 
@@ -1600,7 +1608,7 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
 
                 TextView tv = new TextView(this);
                 tv.setText(label);
-                tv.setTextColor(0xFFFFFFFF);
+                tv.setTextColor(tm.getTaskbarTabTextColor());
                 tv.setTextSize(11);
                 tv.setMaxLines(1);
                 LinearLayout.LayoutParams tvP = new LinearLayout.LayoutParams(

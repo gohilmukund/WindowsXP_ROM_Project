@@ -384,8 +384,9 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
                 LinearLayout tab = new LinearLayout(this);
                 tab.setOrientation(LinearLayout.HORIZONTAL);
                 tab.setGravity(Gravity.CENTER_VERTICAL);
+                ThemeManager tm = ThemeManager.getInstance();
                 boolean isActive = pkg.equals(packageName);
-                tab.setBackgroundResource(isActive ? R.drawable.taskbar_tab_active : R.drawable.taskbar_tab_bg);
+                tab.setBackgroundResource(isActive ? tm.getTaskbarTabActiveRes() : tm.getTaskbarTabBgRes());
                 tab.setPadding(dpToPx(8), dpToPx(2), dpToPx(10), dpToPx(2));
                 tab.setClickable(true);
 
@@ -396,7 +397,10 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
 
                 TextView tv = new TextView(this);
                 tv.setText(label);
-                tv.setTextColor(Color.WHITE);
+                tv.setTextColor(tm.getTaskbarTabTextColor());
+                if (isActive) {
+                    tv.setTypeface(Typeface.DEFAULT_BOLD);
+                }
                 tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
                 tv.setSingleLine(true);
                 LinearLayout.LayoutParams tvP = new LinearLayout.LayoutParams(

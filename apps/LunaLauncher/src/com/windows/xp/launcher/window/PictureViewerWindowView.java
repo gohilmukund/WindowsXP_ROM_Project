@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.windows.xp.launcher.R;
+import com.windows.xp.launcher.theme.ThemeManager;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ public class PictureViewerWindowView extends LinearLayout {
     private ImageView btnRotateRight;
     private ImageView btnSlideshow;
     private ImageView btnOpen;
+    private ImageView btnSetWallpaper;
 
     private final List<File> imageFiles = new ArrayList<File>();
     private int currentIndex = 0;
@@ -123,6 +125,11 @@ public class PictureViewerWindowView extends LinearLayout {
         btnOpen = createToolButton(context, R.drawable.ic_pv_open, "Open Pictures Folder");
         toolbar.addView(btnSlideshow);
         toolbar.addView(btnOpen);
+        toolbar.addView(createSeparator(context));
+
+        // Set as Wallpaper Button
+        btnSetWallpaper = createToolButton(context, R.drawable.ic_display, "Set as Desktop Background");
+        toolbar.addView(btnSetWallpaper);
 
         addView(toolbar);
 
@@ -239,6 +246,19 @@ public class PictureViewerWindowView extends LinearLayout {
                 if (imageFiles.isEmpty()) {
                     scanPicturesDir(new File("/sdcard/DCIM"));
                 }
+            }
+        });
+
+        btnSetWallpaper.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (imageFiles.isEmpty() || currentIndex < 0 || currentIndex >= imageFiles.size()) {
+                    Toast.makeText(context, "No image to set as background", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                File f = imageFiles.get(currentIndex);
+                ThemeManager.getInstance().setUserWallpaperPath(f.getAbsolutePath());
+                Toast.makeText(context, "Desktop background set to " + f.getName(), Toast.LENGTH_SHORT).show();
             }
         });
     }
