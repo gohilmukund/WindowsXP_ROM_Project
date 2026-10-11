@@ -1076,13 +1076,11 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
         if (systemTray != null) {
             systemTray.setBackgroundResource(tm.getTaskbarTrayBgRes());
         }
-        TextView tvClock = (TextView) findViewById(R.id.tray_clock);
-        if (tvClock != null) {
-            tvClock.setTextColor(tm.getTaskbarTrayTextColor());
+        if (trayClock != null) {
+            trayClock.setTextColor(tm.getTaskbarTrayTextColor());
         }
-        TextView tvBattery = (TextView) findViewById(R.id.tray_battery);
-        if (tvBattery != null) {
-            tvBattery.setTextColor(tm.getTaskbarTrayBatteryColor());
+        if (trayBattery != null) {
+            trayBattery.setTextColor(tm.getTaskbarTrayBatteryColor());
         }
 
         // Hide overlay vector flag/text so authentic downloaded bitmap is shown cleanly
@@ -1136,16 +1134,27 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
         View smRightPane = findViewById(R.id.start_menu_right_pane);
         if (smRightPane != null) {
             smRightPane.setBackgroundColor(tm.getStartMenuRightPaneBgColor());
+            if (smRightPane instanceof ViewGroup) {
+                int rTextColor = tm.getStartMenuRightPaneTextColor();
+                ViewGroup pane = (ViewGroup) smRightPane;
+                for (int i = 0; i < pane.getChildCount(); i++) {
+                    View item = pane.getChildAt(i);
+                    if (item instanceof ViewGroup) {
+                        ViewGroup itemGroup = (ViewGroup) item;
+                        for (int j = 0; j < itemGroup.getChildCount(); j++) {
+                            View child = itemGroup.getChildAt(j);
+                            if (child instanceof TextView) {
+                                ((TextView) child).setTextColor(rTextColor);
+                            }
+                        }
+                    }
+                }
+            }
         }
         View smRightDivider = findViewById(R.id.start_menu_right_divider);
         if (smRightDivider != null) {
             smRightDivider.setBackgroundColor(tm.getStartMenuDividerColor());
         }
-        int rTextColor = tm.getStartMenuRightPaneTextColor();
-        updateStartMenuRightItemTextColor(R.id.sm_item_my_docs, rTextColor);
-        updateStartMenuRightItemTextColor(R.id.sm_item_my_pics, rTextColor);
-        updateStartMenuRightItemTextColor(R.id.sm_item_my_comp, rTextColor);
-        updateStartMenuRightItemTextColor(R.id.sm_item_control_panel, rTextColor);
 
         View apHeader = findViewById(R.id.all_programs_header_layout);
         if (apHeader != null) {
@@ -1156,19 +1165,6 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
         }
 
         refreshTaskbarTabs();
-    }
-
-    private void updateStartMenuRightItemTextColor(int containerId, int color) {
-        View v = findViewById(containerId);
-        if (v instanceof ViewGroup) {
-            ViewGroup vg = (ViewGroup) v;
-            for (int i = 0; i < vg.getChildCount(); i++) {
-                View child = vg.getChildAt(i);
-                if (child instanceof TextView) {
-                    ((TextView) child).setTextColor(color);
-                }
-            }
-        }
     }
 
     // --- App Launching & Helpers ---
