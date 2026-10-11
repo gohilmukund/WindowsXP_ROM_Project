@@ -61,14 +61,30 @@ public class ThemeManagerTest {
         Object tm = getInstanceMethod.invoke(null);
         Method setThemeMethod = tmClass.getMethod("setTheme", themeEnum);
 
+        // Verify null guards on setTheme and addListener
+        setThemeMethod.invoke(tm, new Object[]{null});
+        Class<?> listenerInterface = Class.forName("com.windows.xp.launcher.theme.ThemeManager$OnThemeChangeListener");
+        Method addListenerMethod = tmClass.getMethod("addListener", listenerInterface);
+        addListenerMethod.invoke(tm, new Object[]{null});
+
         Object[] constants = themeEnum.getEnumConstants();
         for (Object c : constants) {
+            String themeName = ((Enum<?>) c).name();
             setThemeMethod.invoke(tm, c);
             Object bgVal = mBg.invoke(tm);
             Object textVal = mText.invoke(tm);
             Object batteryVal = mBattery.invoke(tm);
             if (bgVal == null || textVal == null || batteryVal == null) {
-                throw new AssertionError("Dynamic tray accessors returned null for theme " + ((Enum<?>) c).name());
+                throw new AssertionError("Dynamic tray accessors returned null for theme " + themeName);
+            }
+
+            int textColor = (Integer) textVal;
+            int expectedTextColor = ("LUNA_SILVER".equals(themeName) || "CLASSIC".equals(themeName) || "WIN11".equals(themeName))
+                ? 0xFF1C1C1C : 0xFFFFFFFF;
+            if (textColor != expectedTextColor) {
+                throw new AssertionError("Theme " + themeName + " expected tray text color 0x" +
+                    Integer.toHexString(expectedTextColor).toUpperCase() + ", got 0x" +
+                    Integer.toHexString(textColor).toUpperCase());
             }
         }
     }
@@ -96,12 +112,31 @@ public class ThemeManagerTest {
 
         Object[] constants = themeEnum.getEnumConstants();
         for (Object c : constants) {
+            String themeName = ((Enum<?>) c).name();
             setThemeMethod.invoke(tm, c);
             Object rightBgVal = mRightBg.invoke(tm);
             Object rightTextVal = mRightText.invoke(tm);
             Object dividerVal = mDivider.invoke(tm);
             if (rightBgVal == null || rightTextVal == null || dividerVal == null) {
-                throw new AssertionError("Start menu pane accessors returned null for theme " + ((Enum<?>) c).name());
+                throw new AssertionError("Start menu pane accessors returned null for theme " + themeName);
+            }
+
+            int rightTextColor = (Integer) rightTextVal;
+            if ("VISTA".equals(themeName) || "WIN7_AERO".equals(themeName)) {
+                if (rightTextColor != 0xFFFFFFFF) {
+                    throw new AssertionError("Theme " + themeName + " expected right pane text color 0xFFFFFFFF, got 0x" +
+                        Integer.toHexString(rightTextColor).toUpperCase());
+                }
+            } else if ("WIN11".equals(themeName)) {
+                if (rightTextColor != 0xFF1A1A1A) {
+                    throw new AssertionError("Theme " + themeName + " expected right pane text color 0xFF1A1A1A, got 0x" +
+                        Integer.toHexString(rightTextColor).toUpperCase());
+                }
+            } else if ("CLASSIC".equals(themeName) || "LUNA_SILVER".equals(themeName)) {
+                if (rightTextColor != 0xFF000000) {
+                    throw new AssertionError("Theme " + themeName + " expected right pane text color 0xFF000000, got 0x" +
+                        Integer.toHexString(rightTextColor).toUpperCase());
+                }
             }
         }
     }

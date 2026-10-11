@@ -130,6 +130,7 @@ public class ThemeManager {
     }
 
     public void setTheme(Theme theme) {
+        if (theme == null) return;
         if (this.currentTheme != theme) {
             this.currentTheme = theme;
             this.userWallpaperRes = -1;
@@ -243,6 +244,7 @@ public class ThemeManager {
     }
 
     public void addListener(OnThemeChangeListener l) {
+        if (l == null) return;
         if (!listeners.contains(l)) {
             listeners.add(l);
         }
@@ -253,7 +255,7 @@ public class ThemeManager {
     }
 
     private void notifyListeners() {
-        for (OnThemeChangeListener l : listeners) {
+        for (OnThemeChangeListener l : new ArrayList<OnThemeChangeListener>(listeners)) {
             l.onThemeChanged(currentTheme);
         }
     }
@@ -418,6 +420,7 @@ public class ThemeManager {
 
     public int getTaskbarTrayTextColor() {
         switch (currentTheme) {
+            case CLASSIC:
             case LUNA_SILVER:
             case WIN11:
                 return 0xFF1C1C1C;
@@ -433,6 +436,7 @@ public class ThemeManager {
             case ROYALE: return 0xFFB8D3FF;
             case WIN11: return 0xFF404040;
             case CLASSIC: return 0xFF000000;
+            case VISTA: return 0xFFD6D6D6;
             case WIN7_AERO: return 0xFFD0E4FA;
             case LUNA_BLUE:
             default:
@@ -459,6 +463,7 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return 0xFF354B1A;
             case ROYALE: return 0xFF00156E;
+            case VISTA:
             case WIN7_AERO: return 0xFFFFFFFF;
             case WIN11: return 0xFF1A1A1A;
             case CLASSIC:
@@ -475,6 +480,7 @@ public class ThemeManager {
             case LUNA_OLIVE: return 0xFFCBD4B6;
             case LUNA_SILVER: return 0xFFCCD0DA;
             case ROYALE: return 0xFFAEC5E8;
+            case VISTA: return 0xFF3A4B5E;
             case WIN7_AERO: return 0xFF3A5370;
             case WIN11: return 0xFFEAEAEA;
             case CLASSIC: return 0xFF808080;
