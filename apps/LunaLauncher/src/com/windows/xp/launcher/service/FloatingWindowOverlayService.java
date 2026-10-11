@@ -64,6 +64,7 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
     private WindowManager.LayoutParams taskbarParams;
     private ImageView btnStartOverlay;
     private LinearLayout overlayTabsContainer;
+    private LinearLayout trayOverlayLayout;
     private TextView tvTrayClock;
 
     private String packageName = "";
@@ -106,10 +107,12 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
                             String topPkg = cn.getPackageName();
                             if (getPackageName().equals(topPkg) || topPkg.contains("keyguard")) {
                                 // User returned to desktop or lockscreen - hide overlays and clear overscan
-                                if (isRestored) {
-                                    isRestored = false;
-                                    resetOverscan();
+                                isRestored = false;
+                                isImmersive = false;
+                                if (btnMax != null) {
+                                    btnMax.setImageResource(R.drawable.btn_max);
                                 }
+                                resetOverscan();
                                 hideOverlay();
                                 hideBorder();
                                 hideImmersivePill();
@@ -117,16 +120,14 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
                                 // User is in an external app
                                 if (!topPkg.equals(packageName)) {
                                     updateForPackage(topPkg);
+                                    isImmersive = false;
+                                    if (btnMax != null) {
+                                        btnMax.setImageResource(R.drawable.btn_max);
+                                    }
                                 }
                                 if (!isImmersive) {
                                     showOverlay();
-                                    if (isRestored) {
-                                        showBorder();
-                                        hideTaskbar();
-                                    } else {
-                                        hideBorder();
-                                        showTaskbar();
-                                    }
+                                    hideBorder();
                                     refreshOverlayTabs();
                                     updateOverlayClock();
                                 }
@@ -165,6 +166,11 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
             if (ACTION_CLOSE_OVERLAY.equals(intent.getAction())) {
+                isRestored = false;
+                isImmersive = false;
+                if (btnMax != null) {
+                    btnMax.setImageResource(R.drawable.btn_max);
+                }
                 resetOverscan();
                 hideOverlay();
                 hideBorder();
@@ -174,6 +180,12 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
             if (intent.hasExtra(EXTRA_PACKAGE_NAME)) {
                 String pkg = intent.getStringExtra(EXTRA_PACKAGE_NAME);
                 if (pkg != null && !pkg.isEmpty()) {
+                    if (!pkg.equals(packageName)) {
+                        isImmersive = false;
+                        if (btnMax != null) {
+                            btnMax.setImageResource(R.drawable.btn_max);
+                        }
+                    }
                     updateForPackage(pkg);
                 }
             }
@@ -187,13 +199,7 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
         }
         if (!isImmersive) {
             showOverlay();
-            if (isRestored) {
-                showBorder();
-                hideTaskbar();
-            } else {
-                hideBorder();
-                showTaskbar();
-            }
+            hideBorder();
             refreshOverlayTabs();
             updateOverlayClock();
         }
@@ -275,9 +281,9 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
         btnMin.setLayoutParams(minLp);
         btnContainer.addView(btnMin);
 
-        // Maximize / Restore (starts in maximized mode, so icon is restore)
+        // Maximize / Restore (starts in windowed mode, so icon is maximize)
         btnMax = new ImageView(this);
-        btnMax.setImageResource(R.drawable.btn_restore);
+        btnMax.setImageResource(R.drawable.btn_max);
         LinearLayout.LayoutParams maxLp = new LinearLayout.LayoutParams(ctrlSize, ctrlSize);
         maxLp.rightMargin = ctrlMargin;
         btnMax.setLayoutParams(maxLp);
@@ -411,7 +417,7 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
         btnStartOverlay.setId(3001);
         btnStartOverlay.setScaleType(ImageView.ScaleType.FIT_XY);
         btnStartOverlay.setImageResource(tm.getAuthenticStartButtonRes());
-        int startW = getStartButtonWidth(tm.getCurrentTheme());
+        int startW = dpToPx(tm.getStartButtonWidthDp());
         RelativeLayout.LayoutParams startLp = new RelativeLayout.LayoutParams(startW, taskbarHeight);
         startLp.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
         startLp.addRule(RelativeLayout.CENTER_VERTICAL);
@@ -425,31 +431,32 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
         taskbarOverlayView.addView(btnStartOverlay);
 
         // 2. System Tray (Right)
-        LinearLayout trayLayout = new LinearLayout(this);
-        trayLayout.setId(3002);
-        trayLayout.setOrientation(LinearLayout.HORIZONTAL);
-        trayLayout.setGravity(Gravity.CENTER_VERTICAL);
-        trayLayout.setPadding(dpToPx(6), 0, dpToPx(8), 0);
+        trayOverlayLayout = new LinearLayout(this);
+        trayOverlayLayout.setId(3002);
+        trayOverlayLayout.setOrientation(LinearLayout.HORIZONTAL);
+        trayOverlayLayout.setGravity(Gravity.CENTER_VERTICAL);
+        trayOverlayLayout.setPadding(dpToPx(6), 0, dpToPx(8), 0);
+        trayOverlayLayout.setBackgroundResource(tm.getTaskbarTrayBgRes());
         RelativeLayout.LayoutParams trayLp = new RelativeLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, taskbarHeight);
         trayLp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         trayLp.addRule(RelativeLayout.CENTER_VERTICAL);
-        trayLayout.setLayoutParams(trayLp);
+        trayOverlayLayout.setLayoutParams(trayLp);
 
         // Volume icon
         ImageView trayVol = new ImageView(this);
         trayVol.setImageResource(R.drawable.ic_tray_volume);
         LinearLayout.LayoutParams volLp = new LinearLayout.LayoutParams(dpToPx(16), dpToPx(16));
         volLp.rightMargin = dpToPx(6);
-        trayLayout.addView(trayVol, volLp);
+        trayOverlayLayout.addView(trayVol, volLp);
 
         // Clock
         tvTrayClock = new TextView(this);
-        tvTrayClock.setTextColor(Color.WHITE);
+        tvTrayClock.setTextColor(tm.getTaskbarTrayTextColor());
         tvTrayClock.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
-        trayLayout.addView(tvTrayClock);
+        trayOverlayLayout.addView(tvTrayClock);
 
-        taskbarOverlayView.addView(trayLayout);
+        taskbarOverlayView.addView(trayOverlayLayout);
 
         // 3. Taskbar Tabs (Center)
         overlayTabsContainer = new LinearLayout(this);
@@ -466,13 +473,7 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
     }
 
     private int getStartButtonWidth(ThemeManager.Theme theme) {
-        if (theme == ThemeManager.Theme.VISTA || theme == ThemeManager.Theme.WIN7_AERO) {
-            return dpToPx(48);
-        } else if (theme == ThemeManager.Theme.CLASSIC) {
-            return dpToPx(65);
-        } else {
-            return dpToPx(106);
-        }
+        return dpToPx(ThemeManager.getInstance().getStartButtonWidthDp());
     }
 
     private void updateOverlayClock() {
@@ -583,21 +584,21 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
             }
         });
 
-        // Click to toggle Restore / Maximize
+        // Click to toggle Windowed / Immersive Fullscreen
         btnMax.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                android.util.Log.i("FloatingOverlay", "btnMax CLICKED! isRestored=" + isRestored);
+                android.util.Log.i("FloatingOverlay", "btnMax CLICKED! isImmersive=" + isImmersive);
                 toggleRestoreMode();
             }
         });
 
-        // Long click to toggle Immersive mode (matching WindowFrameView)
+        // Long click to toggle Windowed / Immersive Fullscreen
         btnMax.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
                 android.util.Log.i("FloatingOverlay", "btnMax LONG CLICKED! isImmersive=" + isImmersive);
-                toggleImmersiveMode();
+                toggleRestoreMode();
                 return true;
             }
         });
@@ -652,7 +653,7 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
                         if (isDragging) {
                             winX = dragWinX;
                             winY = dragWinY;
-                            applyAppViewportOverscan();
+                            resetOverscan();
                         }
                         return true;
                 }
@@ -672,13 +673,7 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
     }
 
     private void applyAppViewportOverscan() {
-        int screenW = getResources().getDisplayMetrics().widthPixels;
-        int screenH = getResources().getDisplayMetrics().heightPixels;
-        int sLeft = winX;
-        int sTop = winY;
-        int sRight = screenW - (winX + winW);
-        int sBottom = screenH - (winY + winH);
-        applyOverscan(sLeft, sTop, sRight, sBottom);
+        resetOverscan();
     }
 
     private void applyOverscan(int screenLeft, int screenTop, int screenRight, int screenBottom) {
@@ -777,81 +772,40 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
     }
 
     private void toggleRestoreMode() {
-        if (isImmersive) {
-            toggleImmersiveMode();
-            return;
-        }
-
-        int screenW = getResources().getDisplayMetrics().widthPixels;
-
-        if (isRestored) {
-            // Return to Maximized Mode
-            isRestored = false;
-            resetOverscan();
-            hideBorder();
-            showTaskbar();
-
-            titleParams.width = WindowManager.LayoutParams.MATCH_PARENT;
-            titleParams.height = dpToPx(28);
-            titleParams.x = 0;
-            titleParams.y = 0;
-            btnMax.setImageResource(R.drawable.btn_restore);
-            android.util.Log.i("FloatingOverlay", "Switched to Maximized Mode");
-        } else {
-            // Switch to Restored Floating Frame Mode
-            isRestored = true;
-            hideTaskbar();
-
-            winW = dpToPx(760);
-            winH = dpToPx(480);
-            winX = (screenW - winW) / 2;
-            winY = dpToPx(32);
-
-            titleParams.width = WindowManager.LayoutParams.MATCH_PARENT;
-            titleParams.height = dpToPx(28);
-            titleParams.x = 0;
-            titleParams.y = 0;
-            btnMax.setImageResource(R.drawable.btn_max);
-
-            showBorder();
-            updateBorderLayout();
-            applyAppViewportOverscan();
-            android.util.Log.i("FloatingOverlay", "Switched to Restored Floating Frame Mode");
-        }
-
-        applyThemeColors();
-        if (titleBarView != null && titleBarView.getParent() != null) {
-            windowManager.updateViewLayout(titleBarView, titleParams);
-        }
+        toggleImmersiveMode();
     }
 
     public void toggleImmersiveMode() {
         isImmersive = !isImmersive;
+        resetOverscan();
+        hideBorder();
         if (isImmersive) {
-            resetOverscan();
+            if (btnMax != null) {
+                btnMax.setImageResource(R.drawable.btn_restore);
+            }
             hideOverlay();
-            hideBorder();
             showImmersivePill();
             Toast.makeText(this, "Immersive Mode (Tap top pill to exit)", Toast.LENGTH_SHORT).show();
+            android.util.Log.i("FloatingOverlay", "Switched to Immersive Fullscreen Mode");
         } else {
+            if (btnMax != null) {
+                btnMax.setImageResource(R.drawable.btn_max);
+            }
             hideImmersivePill();
             showOverlay();
-            if (isRestored) {
-                showBorder();
-                hideTaskbar();
-                updateBorderLayout();
-                applyAppViewportOverscan();
-            } else {
-                hideBorder();
-                showTaskbar();
-            }
             refreshOverlayTabs();
             updateOverlayClock();
+            android.util.Log.i("FloatingOverlay", "Switched to Windowed Mode");
         }
+        applyThemeColors();
     }
 
     private void minimizeApp() {
         isRestored = false;
+        isImmersive = false;
+        if (btnMax != null) {
+            btnMax.setImageResource(R.drawable.btn_max);
+        }
         resetOverscan();
         Intent home = new Intent(this, LauncherActivity.class);
         home.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
@@ -864,6 +818,10 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
 
     private void closeApp() {
         isRestored = false;
+        isImmersive = false;
+        if (btnMax != null) {
+            btnMax.setImageResource(R.drawable.btn_max);
+        }
         resetOverscan();
         Intent home = new Intent(this, LauncherActivity.class);
         home.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
@@ -903,9 +861,7 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
                 windowManager.addView(titleBarView, titleParams);
             }
         } catch (Exception ignored) {}
-        if (!isRestored) {
-            showTaskbar();
-        }
+        showTaskbar();
     }
 
     private void hideOverlay() {
@@ -955,11 +911,7 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
         GradientDrawable gd = new GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
                 new int[]{tm.getTitlebarActiveStart(), tm.getTitlebarActiveEnd()});
-        if (isRestored) {
-            gd.setCornerRadius(dpToPx(4));
-        } else {
-            gd.setCornerRadii(new float[]{dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4), 0, 0, 0, 0});
-        }
+        gd.setCornerRadii(new float[]{dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4), 0, 0, 0, 0});
         titleBarView.setBackgroundDrawable(gd);
         if (tvTitle != null) {
             tvTitle.setTextColor(tm.getTitlebarTextColor());
@@ -968,11 +920,17 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
         if (taskbarOverlayView != null) {
             taskbarOverlayView.setBackgroundResource(tm.getTaskbarBgRes());
         }
+        if (trayOverlayLayout != null) {
+            trayOverlayLayout.setBackgroundResource(tm.getTaskbarTrayBgRes());
+        }
+        if (tvTrayClock != null) {
+            tvTrayClock.setTextColor(tm.getTaskbarTrayTextColor());
+        }
         if (btnStartOverlay != null) {
             btnStartOverlay.setImageResource(tm.getAuthenticStartButtonRes());
             ViewGroup.LayoutParams lp = btnStartOverlay.getLayoutParams();
             if (lp != null) {
-                lp.width = getStartButtonWidth(tm.getCurrentTheme());
+                lp.width = dpToPx(tm.getStartButtonWidthDp());
                 btnStartOverlay.setLayoutParams(lp);
             }
         }
