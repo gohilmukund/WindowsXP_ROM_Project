@@ -219,6 +219,32 @@ public class CmdPromptView extends LinearLayout {
                 exitListener.onExit();
             }
         } else {
+            // Check if command is a local DOS binary (.exe, .com, .bat)
+            File targetExe = new File(currentDir, rawCmd);
+            if (!targetExe.exists()) {
+                if (!rawCmd.toLowerCase(Locale.US).endsWith(".exe")) {
+                    File exeTry = new File(currentDir, rawCmd + ".exe");
+                    if (exeTry.exists() && exeTry.isFile()) targetExe = exeTry;
+                }
+                if (!targetExe.exists() && !rawCmd.toLowerCase(Locale.US).endsWith(".com")) {
+                    File comTry = new File(currentDir, rawCmd + ".com");
+                    if (comTry.exists() && comTry.isFile()) targetExe = comTry;
+                }
+                if (!targetExe.exists() && !rawCmd.toLowerCase(Locale.US).endsWith(".bat")) {
+                    File batTry = new File(currentDir, rawCmd + ".bat");
+                    if (batTry.exists() && batTry.isFile()) targetExe = batTry;
+                }
+            }
+
+            if (targetExe.exists() && targetExe.isFile()) {
+                appendOutput("\nStarting MS-DOS executable: " + targetExe.getName() + "...\n\n");
+                if (getContext() instanceof com.windows.xp.launcher.LauncherActivity) {
+                    ((com.windows.xp.launcher.LauncherActivity) getContext()).openDosApplication(targetExe, null, R.drawable.ic_dos_app);
+                }
+                updatePromptLabel();
+                return;
+            }
+
             // Bridge to Android shell process execution
             executeShellProcess(rawCmd);
         }

@@ -36,6 +36,7 @@ public class ExplorerWindowView extends LinearLayout {
         void onOpenTextFile(File file);
         void onOpenMediaFile(File file);
         void onOpenImageFile(File file);
+        void onOpenDosExecutable(File file);
     }
 
     public interface OnTitleChangeListener {
@@ -260,7 +261,12 @@ public class ExplorerWindowView extends LinearLayout {
 
         String ext = MimeTypeResolver.getExtension(file.getName()).toLowerCase();
 
-        if (ext.equals("txt") || ext.equals("log") || ext.equals("cfg") || ext.equals("ini") || ext.equals("bat")) {
+        if (ext.equals("exe") || ext.equals("com") || ext.equals("bat")) {
+            if (fileActionListener != null) {
+                fileActionListener.onOpenDosExecutable(file);
+                return;
+            }
+        } else if (ext.equals("txt") || ext.equals("log") || ext.equals("cfg") || ext.equals("ini")) {
             if (fileActionListener != null) {
                 fileActionListener.onOpenTextFile(file);
                 return;

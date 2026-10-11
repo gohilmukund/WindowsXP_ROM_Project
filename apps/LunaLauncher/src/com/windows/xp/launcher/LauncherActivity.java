@@ -41,6 +41,7 @@ import android.os.SystemClock;
 import com.windows.xp.launcher.service.FloatingWindowOverlayService;
 import com.windows.xp.launcher.theme.ThemeManager;
 import com.windows.xp.launcher.window.CmdPromptView;
+import com.windows.xp.launcher.window.DosBoxWindowView;
 import com.windows.xp.launcher.window.ControlPanelWindowView;
 import com.windows.xp.launcher.window.DisplayPropertiesWindowView;
 import com.windows.xp.launcher.window.ExplorerWindowView;
@@ -879,6 +880,26 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
         openWindow(win, "C:\\WINDOWS\\system32\\cmd.exe", R.drawable.ic_cmd, 560, 360);
     }
 
+    public void openDosApplication(File exeFile, String title, int iconRes) {
+        if (exeFile == null || !exeFile.exists()) {
+            Toast.makeText(this, "The specified DOS application does not exist.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        final WindowFrameView win = new WindowFrameView(this);
+        DosBoxWindowView dosView = new DosBoxWindowView(this, exeFile, new DosBoxWindowView.OnDosSessionListener() {
+            @Override
+            public void onSessionFinished() {
+                win.close();
+            }
+        });
+
+        win.setWindowContent(dosView);
+        String winTitle = title != null ? title : exeFile.getName() + " - MS-DOS Prompt";
+        int winIcon = iconRes != 0 ? iconRes : R.drawable.ic_dos_app;
+        openWindow(win, winTitle, winIcon, 640, 440);
+    }
+
     public void openNotepad(File file) {
         WindowFrameView win = new WindowFrameView(this);
         NotepadWindowView notepadView = new NotepadWindowView(this);
@@ -911,6 +932,11 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
             @Override
             public void onOpenImageFile(File file) {
                 openPictureViewer(file);
+            }
+
+            @Override
+            public void onOpenDosExecutable(File file) {
+                openDosApplication(file, null, R.drawable.ic_dos_app);
             }
         });
         explorerView.setOnTitleChangeListener(new ExplorerWindowView.OnTitleChangeListener() {
