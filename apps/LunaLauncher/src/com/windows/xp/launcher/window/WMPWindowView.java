@@ -505,6 +505,9 @@ public class WMPWindowView extends LinearLayout {
             videoView.setVisibility(VISIBLE);
             videoView.setVideoURI(track.uri);
             videoView.start();
+            isPlaying = true;
+            btnPlayPause.setImageResource(R.drawable.ic_wmp_pause);
+            progressHandler.post(progressRunnable);
         } else {
             if (videoView != null && videoView.isPlaying()) {
                 videoView.stopPlayback();

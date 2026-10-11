@@ -980,6 +980,7 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
 
     @Override
     public void onThemeChanged(ThemeManager.Theme newTheme) {
+        lastTasksCacheKey = "";
         applyThemeColors();
         refreshOverlayTabs();
     }
