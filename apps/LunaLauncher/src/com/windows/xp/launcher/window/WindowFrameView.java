@@ -62,6 +62,7 @@ public class WindowFrameView extends RelativeLayout implements ThemeManager.OnTh
     }
 
     private void init(Context context) {
+        setClickable(true);
         setBackgroundResource(R.drawable.window_frame_border);
 
         // 1. Title bar (28dp high)
@@ -154,6 +155,7 @@ public class WindowFrameView extends RelativeLayout implements ThemeManager.OnTh
         contentParams.bottomMargin = dpToPx(3);
         contentContainer.setLayoutParams(contentParams);
         contentContainer.setBackgroundColor(Color.WHITE);
+        contentContainer.setClickable(true);
         addView(contentContainer);
 
         // 3. Resize Grip (bottom right)
@@ -217,7 +219,7 @@ public class WindowFrameView extends RelativeLayout implements ThemeManager.OnTh
             }
         });
 
-        // Touch anywhere on window brings to front
+        // Touch anywhere on window brings to front and consumes touch event so desktop icons behind never receive it
         setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -227,7 +229,7 @@ public class WindowFrameView extends RelativeLayout implements ThemeManager.OnTh
                         listener.onWindowFocus(WindowFrameView.this);
                     }
                 }
-                return false;
+                return true;
             }
         });
 
@@ -285,6 +287,14 @@ public class WindowFrameView extends RelativeLayout implements ThemeManager.OnTh
             }
         });
 
+        btnMax.setOnLongClickListener(new OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                toggleImmersive();
+                return true;
+            }
+        });
+
         btnClose.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -320,6 +330,17 @@ public class WindowFrameView extends RelativeLayout implements ThemeManager.OnTh
         contentContainer.removeAllViews();
         contentContainer.addView(view, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+    
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            bringToFront();
+            if (listener != null) {
+                listener.onWindowFocus(this);
+            }
+        }
+        return true;
     }
 
     public void setActive(boolean active) {
@@ -423,6 +444,40 @@ public class WindowFrameView extends RelativeLayout implements ThemeManager.OnTh
         if (parent != null) {
             parent.removeView(this);
         }
+    }
+
+    private boolean isImmersive = false;
+
+    public void toggleImmersive() {
+        if (!isImmersive) {
+            isImmersive = true;
+            if (!isMaximized) {
+                toggleMaximize();
+            }
+            titleBar.setVisibility(View.GONE);
+            resizeGrip.setVisibility(View.GONE);
+            setBackgroundDrawable(null);
+            RelativeLayout.LayoutParams contentParams = (RelativeLayout.LayoutParams) contentContainer.getLayoutParams();
+            contentParams.topMargin = 0;
+            contentParams.leftMargin = 0;
+            contentParams.rightMargin = 0;
+            contentParams.bottomMargin = 0;
+            contentContainer.setLayoutParams(contentParams);
+        } else {
+            isImmersive = false;
+            titleBar.setVisibility(View.VISIBLE);
+            applyThemeStyle();
+            RelativeLayout.LayoutParams contentParams = (RelativeLayout.LayoutParams) contentContainer.getLayoutParams();
+            contentParams.topMargin = 0;
+            contentParams.leftMargin = dpToPx(3);
+            contentParams.rightMargin = dpToPx(3);
+            contentParams.bottomMargin = dpToPx(3);
+            contentContainer.setLayoutParams(contentParams);
+        }
+    }
+
+    public boolean isImmersive() {
+        return isImmersive;
     }
 
     public boolean isMaximized() {

@@ -190,7 +190,7 @@
                 <ImageView
                     android:layout_width="44dp"
                     android:layout_height="44dp"
-                    android:src="@drawable/ic_fotoo" />
+                    android:src="@drawable/ic_picture_viewer" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -201,7 +201,7 @@
                     android:shadowDx="1"
                     android:shadowDy="1"
                     android:shadowRadius="2"
-                    android:text="Fotoo Frame"
+                    android:text="Windows Photo Viewer"
                     android:textColor="#FFFFFF"
                     android:textSize="11sp" />
             </LinearLayout>
@@ -351,6 +351,7 @@
 
         <!-- Top Header: User Profile -->
         <LinearLayout
+            android:id="@+id/start_menu_header_layout"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:background="@drawable/start_menu_header"
@@ -441,8 +442,8 @@
                     android:clickable="true"
                     android:gravity="center_vertical"
                     android:paddingLeft="6dp">
-                    <ImageView android:layout_width="28dp" android:layout_height="28dp" android:src="@drawable/ic_fotoo" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:text="Fotoo Frame" android:textColor="#000000" android:textSize="12sp" />
+                    <ImageView android:layout_width="28dp" android:layout_height="28dp" android:src="@drawable/ic_picture_viewer" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:text="Windows Photo Viewer" android:textColor="#000000" android:textSize="12sp" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -538,6 +539,7 @@
 
         <!-- Bottom Bar: Log Off & Turn Off Computer -->
         <LinearLayout
+            android:id="@+id/start_menu_bottom_layout"
             android:layout_width="match_parent"
             android:layout_height="40dp"
             android:background="@drawable/start_menu_bottom"
@@ -585,6 +587,7 @@
 
         <!-- Top Header: All Programs -->
         <LinearLayout
+            android:id="@+id/all_programs_header_layout"
             android:layout_width="match_parent"
             android:layout_height="32dp"
             android:background="@drawable/luna_titlebar_active"
@@ -708,6 +711,15 @@
             android:paddingLeft="10dp"
             android:paddingRight="12dp">
 
+            <ImageView
+                android:id="@+id/tray_volume"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginRight="8dp"
+                android:src="@drawable/ic_tray_volume"
+                android:scaleType="fitCenter"
+                android:clickable="true" />
+
             <TextView
                 android:id="@+id/tray_battery"
                 android:layout_width="wrap_content"
@@ -725,6 +737,102 @@
                 android:textColor="#FFFFFF"
                 android:textSize="11sp"
                 android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Windows XP Master Volume Control Popup -->
+    <LinearLayout
+        android:id="@+id/volume_popup_container"
+        android:layout_width="140dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|right"
+        android:layout_marginRight="8dp"
+        android:layout_marginBottom="32dp"
+        android:background="@drawable/volume_popup_bg"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:clickable="true">
+
+        <!-- Volume Title Bar -->
+        <RelativeLayout
+            android:id="@+id/volume_title_bar"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:background="#0055EA"
+            android:paddingLeft="6dp"
+            android:paddingRight="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="Volume"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btn_close_volume"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:background="#CC3300"
+                android:gravity="center"
+                android:text="✕"
+                android:textColor="#FFFFFF"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:clickable="true" />
+        </RelativeLayout>
+
+        <!-- Volume Content Body -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/tv_volume_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Volume"
+                android:textColor="#000000"
+                android:textSize="11sp" />
+
+            <!-- Master Volume Seek Bar -->
+            <SeekBar
+                android:id="@+id/seek_master_volume"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tv_volume_percent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="70%"
+                android:textColor="#333333"
+                android:textSize="10sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="6dp"
+                android:background="#A0A0A0" />
+
+            <!-- Mute Checkbox -->
+            <CheckBox
+                android:id="@+id/chk_volume_mute"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mute"
+                android:textColor="#000000"
+                android:textSize="11sp" />
         </LinearLayout>
     </LinearLayout>
 

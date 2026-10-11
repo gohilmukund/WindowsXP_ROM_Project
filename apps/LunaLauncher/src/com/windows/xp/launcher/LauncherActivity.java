@@ -11,6 +11,10 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.Typeface;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,24 +23,38 @@ import android.provider.Settings;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.media.AudioManager;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import android.app.Dialog;
+import android.os.IBinder;
+import android.os.PowerManager;
+import android.os.SystemClock;
+import com.windows.xp.launcher.service.FloatingWindowOverlayService;
 import com.windows.xp.launcher.theme.ThemeManager;
 import com.windows.xp.launcher.window.CmdPromptView;
 import com.windows.xp.launcher.window.ControlPanelWindowView;
 import com.windows.xp.launcher.window.DisplayPropertiesWindowView;
 import com.windows.xp.launcher.window.ExplorerWindowView;
+import com.windows.xp.launcher.window.IEWindowView;
 import com.windows.xp.launcher.window.NetworkConnectionsWindowView;
 import com.windows.xp.launcher.window.NotepadWindowView;
 import com.windows.xp.launcher.window.PaintWindowView;
+import com.windows.xp.launcher.window.PictureViewerWindowView;
 import com.windows.xp.launcher.window.SystemPropertiesWindowView;
+import com.windows.xp.launcher.window.WMPWindowView;
 import com.windows.xp.launcher.window.WindowFrameView;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,11 +68,25 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
     private View startMenuContainer;
     private View allProgramsContainer;
     private LinearLayout allProgramsList;
-    private View btnStart;
+    private LinearLayout btnStart;
     private LinearLayout taskbarTabsContainer;
     private TextView trayClock;
     private TextView trayBattery;
     private FrameLayout desktopWindowContainer;
+
+    private LinearLayout volumePopupContainer;
+    private SeekBar seekMasterVolume;
+    private TextView tvVolumePercent;
+    private CheckBox chkVolumeMute;
+    private ImageView trayVolume;
+    private final Runnable hideVolumeRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (volumePopupContainer != null && volumePopupContainer.getVisibility() == View.VISIBLE) {
+                volumePopupContainer.setVisibility(View.GONE);
+            }
+        }
+    };
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private AltTabDialog altTabDialog;
@@ -63,6 +95,21 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
 
     private final List<WindowFrameView> openWindows = new ArrayList<WindowFrameView>();
     private WindowFrameView activeWindow = null;
+
+    private static class AppInfoItem {
+        final String title;
+        final String packageName;
+        final Drawable icon;
+
+        AppInfoItem(String title, String packageName, Drawable icon) {
+            this.title = title;
+            this.packageName = packageName;
+            this.icon = icon;
+        }
+    }
+
+    private boolean isAllProgramsPopulated = false;
+    private final List<AppInfoItem> cachedInstalledApps = new ArrayList<AppInfoItem>();
 
     private final BroadcastReceiver batteryReceiver = new BroadcastReceiver() {
         @Override
@@ -102,6 +149,10 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_launcher);
 
         activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
@@ -120,7 +171,7 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
             });
         }
 
-        btnStart = findViewById(R.id.btn_start);
+        btnStart = (LinearLayout) findViewById(R.id.btn_start);
         taskbarTabsContainer = (LinearLayout) findViewById(R.id.taskbar_tabs_container);
         trayClock = (TextView) findViewById(R.id.tray_clock);
         trayBattery = (TextView) findViewById(R.id.tray_battery);
@@ -138,11 +189,84 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
         registerReceiver(minimizeReceiver, new IntentFilter("com.windows.xp.ACTION_MINIMIZE"));
 
         handler.post(clockRunnable);
+        populateAllProgramsList();
+        startPreloadingInstalledApps();
+        setupVolumeControl();
+        handleThemeIntent(getIntent());
+        try {
+            startService(new Intent(this, FloatingWindowOverlayService.class));
+        } catch (Exception ignored) {}
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        refreshTaskbarTabs();
+        try {
+            Intent closeOverlay = new Intent(this, FloatingWindowOverlayService.class);
+            closeOverlay.setAction(FloatingWindowOverlayService.ACTION_CLOSE_OVERLAY);
+            startService(closeOverlay);
+        } catch (Exception ignored) {}
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (intent != null && Intent.ACTION_MAIN.equals(intent.getAction()) && intent.hasCategory(Intent.CATEGORY_HOME)) {
+            toggleStartMenu();
+        }
+        handleThemeIntent(intent);
+    }
+
+    private void handleThemeIntent(Intent intent) {
+        if (intent == null) return;
+        if (intent.hasExtra("theme")) {
+            String themeName = intent.getStringExtra("theme");
+            try {
+                ThemeManager.Theme t = ThemeManager.Theme.valueOf(themeName.toUpperCase());
+                ThemeManager.getInstance().setTheme(t);
+            } catch (Exception ignored) {}
+        }
+        if (intent.getBooleanExtra("toggle_start", false)) {
+            toggleStartMenu();
+        }
+        if (intent.getBooleanExtra("toggle_all_programs", false)) {
+            toggleAllPrograms();
+        }
+        if (intent.getBooleanExtra("close_all_windows", false)) {
+            closeAllWindows();
+        }
+        if (intent.hasExtra("open_explorer")) {
+            openExplorer(intent.getStringExtra("open_explorer"));
+        }
+        if (intent.getBooleanExtra("show_shutdown", false)) {
+            showShutdownDialog();
+        }
+        if (intent.hasExtra("open_ie")) {
+            openInternetExplorer(intent.getStringExtra("open_ie"));
+        }
+        if (intent.getBooleanExtra("open_wmp", false)) {
+            openMediaPlayer(null);
+        }
+        if (intent.getBooleanExtra("open_picture_viewer", false)) {
+            openPictureViewer(null);
+        }
+        if (intent.getBooleanExtra("toggle_volume", false)) {
+            toggleVolumeControlPopup();
+        }
+        if (intent.getBooleanExtra("show_volume", false)) {
+            showVolumeControlPopup(false);
+        }
+    }
+
+    private void closeAllWindows() {
+        List<WindowFrameView> copy = new ArrayList<WindowFrameView>(openWindows);
+        for (WindowFrameView w : copy) {
+            desktopWindowContainer.removeView(w);
+        }
+        openWindows.clear();
+        activeWindow = null;
         refreshTaskbarTabs();
     }
 
@@ -150,6 +274,7 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
     protected void onDestroy() {
         super.onDestroy();
         handler.removeCallbacks(clockRunnable);
+        handler.removeCallbacks(hideVolumeRunnable);
         ThemeManager.getInstance().removeListener(this);
         try {
             unregisterReceiver(batteryReceiver);
@@ -158,15 +283,15 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
     }
 
     @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        if (Intent.ACTION_MAIN.equals(intent.getAction()) && intent.hasCategory(Intent.CATEGORY_HOME)) {
-            toggleStartMenu();
-        }
-    }
-
-    @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            adjustVolume(AudioManager.ADJUST_RAISE);
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            adjustVolume(AudioManager.ADJUST_LOWER);
+            return true;
+        }
         if (keyCode == KeyEvent.KEYCODE_MENU) {
             showAltTabSwitcher();
             return true;
@@ -178,6 +303,10 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (altTabDialog != null && altTabDialog.isShowing()) {
                 altTabDialog.dismiss();
+                return true;
+            }
+            if (volumePopupContainer != null && volumePopupContainer.getVisibility() == View.VISIBLE) {
+                volumePopupContainer.setVisibility(View.GONE);
                 return true;
             }
             if (allProgramsContainer != null && allProgramsContainer.getVisibility() == View.VISIBLE) {
@@ -225,7 +354,9 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
         if (allProgramsContainer.getVisibility() == View.VISIBLE) {
             allProgramsContainer.setVisibility(View.GONE);
         } else {
-            populateAllProgramsList();
+            if (!isAllProgramsPopulated) {
+                populateAllProgramsList();
+            }
             allProgramsContainer.setVisibility(View.VISIBLE);
             allProgramsContainer.bringToFront();
         }
@@ -253,12 +384,14 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
                 @Override
                 public void onClick(View v) {
                     closeStartMenu();
+                    closeVolumePopup();
                 }
             });
             rootDesktop.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
                     closeStartMenu();
+                    closeVolumePopup();
                     openDisplayProperties();
                     return true;
                 }
@@ -283,17 +416,19 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
             }
         });
 
-        setDesktopLauncher(R.id.icon_internet_explorer, "com.windows.xp.internetexplorer", new Runnable() {
+        findViewById(R.id.icon_internet_explorer).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void run() {
-                launchApp("org.mozilla.firefox");
+            public void onClick(View v) {
+                closeStartMenu();
+                openInternetExplorer("https://www.google.com");
             }
         });
 
-        setDesktopLauncher(R.id.icon_wmp, "com.windows.xp.wmp", new Runnable() {
+        findViewById(R.id.icon_wmp).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void run() {
-                launchApp("org.schabi.newpipelegacy");
+            public void onClick(View v) {
+                closeStartMenu();
+                openMediaPlayer(null);
             }
         });
 
@@ -301,9 +436,7 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
             @Override
             public void onClick(View v) {
                 closeStartMenu();
-                if (!launchApp("com.bo.fotoo") && !launchApp("com.boombuler.fotoo")) {
-                    Toast.makeText(LauncherActivity.this, "Fotoo Digital Photo Frame (/sdcard/Pictures)", Toast.LENGTH_SHORT).show();
-                }
+                openPictureViewer(null);
             }
         });
 
@@ -353,9 +486,7 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
             @Override
             public void onClick(View v) {
                 closeStartMenu();
-                if (!launchApp("com.windows.xp.internetexplorer")) {
-                    launchApp("org.mozilla.firefox");
-                }
+                openInternetExplorer("https://www.google.com");
             }
         });
 
@@ -363,9 +494,7 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
             @Override
             public void onClick(View v) {
                 closeStartMenu();
-                if (!launchApp("com.windows.xp.wmp")) {
-                    launchApp("org.schabi.newpipelegacy");
-                }
+                openMediaPlayer(null);
             }
         });
 
@@ -397,9 +526,7 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
             @Override
             public void onClick(View v) {
                 closeStartMenu();
-                if (!launchApp("com.bo.fotoo")) {
-                    launchApp("com.boombuler.fotoo");
-                }
+                openPictureViewer(null);
             }
         });
 
@@ -422,7 +549,7 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
             @Override
             public void onClick(View v) {
                 closeStartMenu();
-                openExplorer("/sdcard/Pictures");
+                openPictureViewer(null);
             }
         });
 
@@ -533,9 +660,13 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
         addProgramItem(allProgramsList, null, R.drawable.ic_wmp, "Windows Media Player", new Runnable() {
             @Override
             public void run() {
-                if (!launchApp("com.windows.xp.wmp")) {
-                    launchApp("org.schabi.newpipelegacy");
-                }
+                openMediaPlayer(null);
+            }
+        });
+        addProgramItem(allProgramsList, null, R.drawable.ic_picture_viewer, "Windows Picture and Fax Viewer", new Runnable() {
+            @Override
+            public void run() {
+                openPictureViewer(null);
             }
         });
         addProgramItem(allProgramsList, null, R.drawable.ic_fotoo, "Fotoo Digital Frame", new Runnable() {
@@ -547,53 +678,65 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
             }
         });
 
-        // 5. Installed Android Applications (Dynamic Alphabetical List)
-        addProgramSectionHeader(allProgramsList, "Installed Applications");
-        try {
-            Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
-            mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-            List<ResolveInfo> pkgAppsList = packageManager.queryIntentActivities(mainIntent, 0);
-
-            Collections.sort(pkgAppsList, new Comparator<ResolveInfo>() {
-                @Override
-                public int compare(ResolveInfo a, ResolveInfo b) {
-                    CharSequence labelA = a.loadLabel(packageManager);
-                    CharSequence labelB = b.loadLabel(packageManager);
-                    String sA = labelA != null ? labelA.toString() : "";
-                    String sB = labelB != null ? labelB.toString() : "";
-                    return sA.compareToIgnoreCase(sB);
-                }
-            });
-
-            String myPkg = getPackageName();
-            for (final ResolveInfo ri : pkgAppsList) {
-                if (ri.activityInfo == null) continue;
-                final String pkgName = ri.activityInfo.packageName;
-                if (myPkg.equals(pkgName)) continue; // Don't show launcher itself
-
-                CharSequence label = ri.loadLabel(packageManager);
-                String title = label != null ? label.toString() : ri.activityInfo.name;
-                Drawable icon = null;
-                try {
-                    icon = ri.loadIcon(packageManager);
-                } catch (Exception ignored) {}
-
-                addProgramItem(allProgramsList, icon, R.drawable.ic_my_computer, title, new Runnable() {
+        // 5. Installed Android Applications (Instant from cached items)
+        if (!cachedInstalledApps.isEmpty()) {
+            addProgramSectionHeader(allProgramsList, "Installed Applications (" + cachedInstalledApps.size() + ")");
+            for (final AppInfoItem app : cachedInstalledApps) {
+                addProgramItem(allProgramsList, app.icon, R.drawable.ic_my_computer, app.title, new Runnable() {
                     @Override
                     public void run() {
-                        try {
-                            Intent launchIntent = packageManager.getLaunchIntentForPackage(pkgName);
-                            if (launchIntent != null) {
-                                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                startActivity(launchIntent);
-                            }
-                        } catch (Exception e) {
-                            Toast.makeText(LauncherActivity.this, "Cannot launch " + pkgName, Toast.LENGTH_SHORT).show();
-                        }
+                        launchApp(app.packageName);
                     }
                 });
             }
-        } catch (Exception ignored) {}
+        }
+        isAllProgramsPopulated = true;
+    }
+
+    private void startPreloadingInstalledApps() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+                    mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+                    List<ResolveInfo> pkgAppsList = packageManager.queryIntentActivities(mainIntent, 0);
+                    String myPkg = getPackageName();
+
+                    final List<AppInfoItem> items = new ArrayList<AppInfoItem>();
+                    for (ResolveInfo ri : pkgAppsList) {
+                        if (ri.activityInfo == null) continue;
+                        String pkgName = ri.activityInfo.packageName;
+                        if (myPkg.equals(pkgName)) continue;
+
+                        CharSequence label = ri.loadLabel(packageManager);
+                        String title = label != null ? label.toString() : ri.activityInfo.name;
+                        Drawable icon = null;
+                        try {
+                            icon = ri.loadIcon(packageManager);
+                        } catch (Exception ignored) {}
+
+                        items.add(new AppInfoItem(title, pkgName, icon));
+                    }
+
+                    Collections.sort(items, new Comparator<AppInfoItem>() {
+                        @Override
+                        public int compare(AppInfoItem a, AppInfoItem b) {
+                            return a.title.compareToIgnoreCase(b.title);
+                        }
+                    });
+
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            cachedInstalledApps.clear();
+                            cachedInstalledApps.addAll(items);
+                            populateAllProgramsList();
+                        }
+                    });
+                } catch (Exception ignored) {}
+            }
+        }).start();
     }
 
     private void addProgramSectionHeader(LinearLayout container, String title) {
@@ -708,6 +851,7 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
     }
 
     public void activateWindow(WindowFrameView window) {
+        closeVolumePopup();
         for (WindowFrameView w : openWindows) {
             w.setActive(w == window);
         }
@@ -754,6 +898,16 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
             public void onOpenTextFile(File file) {
                 openNotepad(file);
             }
+
+            @Override
+            public void onOpenMediaFile(File file) {
+                openMediaPlayer(file);
+            }
+
+            @Override
+            public void onOpenImageFile(File file) {
+                openPictureViewer(file);
+            }
         });
         explorerView.setOnTitleChangeListener(new ExplorerWindowView.OnTitleChangeListener() {
             @Override
@@ -764,10 +918,47 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
             }
         });
         win.setWindowContent(explorerView);
+        openWindow(win, "My Computer", ThemeManager.getInstance().getMyComputerIconRes(), 620, 440);
         if (path != null) {
             explorerView.navigateTo(path, false);
         }
-        openWindow(win, "My Computer", R.drawable.ic_my_computer, 620, 440);
+    }
+
+    public void openInternetExplorer(String url) {
+        final WindowFrameView win = new WindowFrameView(this);
+        IEWindowView ieView = new IEWindowView(this);
+        ieView.setOnTitleUpdateListener(new IEWindowView.OnTitleUpdateListener() {
+            @Override
+            public void onTitleUpdated(String title) {
+                win.setTitle(title);
+                refreshTaskbarTabs();
+            }
+        });
+        if (url != null) {
+            ieView.loadUrl(url);
+        }
+        win.setWindowContent(ieView);
+        openWindow(win, "Microsoft Internet Explorer", R.drawable.ic_ie, 640, 440);
+    }
+
+    public void openMediaPlayer(File file) {
+        final WindowFrameView win = new WindowFrameView(this);
+        WMPWindowView wmpView = new WMPWindowView(this);
+        if (file != null) {
+            wmpView.playFile(file);
+        }
+        win.setWindowContent(wmpView);
+        openWindow(win, "Windows Media Player", R.drawable.ic_wmp, 580, 420);
+    }
+
+    public void openPictureViewer(File file) {
+        final WindowFrameView win = new WindowFrameView(this);
+        PictureViewerWindowView picView = new PictureViewerWindowView(this);
+        if (file != null) {
+            picView.openImage(file);
+        }
+        win.setWindowContent(picView);
+        openWindow(win, "Windows Picture and Fax Viewer", R.drawable.ic_picture_viewer, 600, 430);
     }
 
     public void openControlPanel() {
@@ -861,19 +1052,88 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
         if (taskbar != null) {
             taskbar.setBackgroundResource(tm.getTaskbarBgRes());
         }
-        if (btnStart != null) {
-            btnStart.setBackgroundResource(tm.getStartButtonBgRes());
-        }
+
         ImageView imgFlag = (ImageView) findViewById(R.id.img_start_flag);
-        if (imgFlag != null) {
-            imgFlag.setImageResource(tm.getStartIconRes());
-        }
         TextView tvStart = (TextView) findViewById(R.id.tv_start_text);
-        if (tvStart != null) {
-            String text = tm.getStartButtonText();
-            tvStart.setText(text);
-            tvStart.setVisibility(text.isEmpty() ? View.GONE : View.VISIBLE);
+
+        if (btnStart != null) {
+            btnStart.setBackgroundResource(tm.getAuthenticStartButtonRes());
+            ViewGroup.LayoutParams lp = btnStart.getLayoutParams();
+
+            if (newTheme == ThemeManager.Theme.VISTA || newTheme == ThemeManager.Theme.WIN7_AERO) {
+                lp.width = dpToPx(48);
+                btnStart.setLayoutParams(lp);
+                btnStart.setGravity(Gravity.CENTER);
+                btnStart.setPadding(0, 0, 0, 0);
+            } else if (newTheme == ThemeManager.Theme.CLASSIC) {
+                lp.width = dpToPx(65);
+                btnStart.setLayoutParams(lp);
+                btnStart.setGravity(Gravity.CENTER);
+                btnStart.setPadding(0, 0, 0, 0);
+            } else {
+                // Luna Blue, Olive & Silver (106px wide)
+                lp.width = dpToPx(106);
+                btnStart.setLayoutParams(lp);
+                btnStart.setGravity(Gravity.CENTER_VERTICAL);
+                btnStart.setPadding(0, 0, 0, 0);
+            }
         }
+
+        // Hide overlay vector flag/text so authentic downloaded bitmap is shown cleanly
+        if (imgFlag != null) {
+            imgFlag.setVisibility(View.GONE);
+        }
+        if (tvStart != null) {
+            tvStart.setVisibility(View.GONE);
+        }
+
+        // Update Desktop Icons to adapt to theme
+        View vComp = findViewById(R.id.icon_my_computer);
+        if (vComp instanceof ViewGroup && ((ViewGroup) vComp).getChildCount() > 0) {
+            View child = ((ViewGroup) vComp).getChildAt(0);
+            if (child instanceof ImageView) {
+                ((ImageView) child).setImageResource(tm.getMyComputerIconRes());
+            }
+        }
+        View vRecycle = findViewById(R.id.icon_recycle_bin);
+        if (vRecycle instanceof ViewGroup && ((ViewGroup) vRecycle).getChildCount() > 0) {
+            View child = ((ViewGroup) vRecycle).getChildAt(0);
+            if (child instanceof ImageView) {
+                ((ImageView) child).setImageResource(tm.getRecycleBinIconRes());
+            }
+        }
+        View vDocs = findViewById(R.id.icon_my_documents);
+        if (vDocs instanceof ViewGroup && ((ViewGroup) vDocs).getChildCount() > 0) {
+            View child = ((ViewGroup) vDocs).getChildAt(0);
+            if (child instanceof ImageView) {
+                ((ImageView) child).setImageResource(tm.getFolderIconRes());
+            }
+        }
+
+        // Apply theme colors to Start Menu header, bottom bar, and All Programs header
+        View smHeader = findViewById(R.id.start_menu_header_layout);
+        if (smHeader != null) {
+            int[] hColors = tm.getStartMenuHeaderColors();
+            GradientDrawable gdHeader = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, hColors);
+            gdHeader.setCornerRadii(new float[]{dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6), 0, 0, 0, 0});
+            smHeader.setBackgroundDrawable(gdHeader);
+        }
+
+        View smBottom = findViewById(R.id.start_menu_bottom_layout);
+        if (smBottom != null) {
+            int[] bColors = tm.getStartMenuBottomColors();
+            GradientDrawable gdBottom = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, bColors);
+            smBottom.setBackgroundDrawable(gdBottom);
+        }
+
+        View apHeader = findViewById(R.id.all_programs_header_layout);
+        if (apHeader != null) {
+            int[] hColors = tm.getStartMenuHeaderColors();
+            GradientDrawable gdAp = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, hColors);
+            gdAp.setCornerRadii(new float[]{dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4), 0, 0, 0, 0});
+            apHeader.setBackgroundDrawable(gdAp);
+        }
+
         refreshTaskbarTabs();
     }
 
@@ -885,6 +1145,17 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
             if (intent != null) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
+
+                // Start Floating Window Overlay Service
+                try {
+                    CharSequence label = packageManager.getApplicationLabel(
+                            packageManager.getApplicationInfo(pkg, 0));
+                    Intent overlay = new Intent(this, FloatingWindowOverlayService.class);
+                    overlay.putExtra(FloatingWindowOverlayService.EXTRA_PACKAGE_NAME, pkg);
+                    overlay.putExtra(FloatingWindowOverlayService.EXTRA_APP_LABEL, label.toString());
+                    startService(overlay);
+                } catch (Exception ignored) {}
+
                 return true;
             }
         } catch (Exception ignored) {}
@@ -913,32 +1184,324 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
         b.show();
     }
 
+    private Dialog shutdownDialog;
+
     private void showShutdownDialog() {
-        String[] options = new String[]{"Turn Off", "Restart Computer", "Cancel"};
-        AlertDialog.Builder b = new AlertDialog.Builder(this);
-        b.setTitle("Turn Off Computer");
-        b.setItems(options, new DialogInterface.OnClickListener() {
+        if (shutdownDialog != null && shutdownDialog.isShowing()) {
+            shutdownDialog.dismiss();
+        }
+
+        final Dialog d = new Dialog(this, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
+        d.setContentView(R.layout.dialog_turn_off_computer);
+        d.setCanceledOnTouchOutside(true);
+
+        View overlay = d.findViewById(R.id.shutdown_dim_overlay);
+        if (overlay != null) {
+            overlay.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    d.dismiss();
+                }
+            });
+        }
+
+        View dialogBox = d.findViewById(R.id.shutdown_dialog_box);
+        if (dialogBox != null) {
+            dialogBox.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // Do not dismiss when clicking modal dialog
+                }
+            });
+        }
+
+        // Stand By
+        View btnStandby = d.findViewById(R.id.btn_action_standby);
+        if (btnStandby != null) {
+            btnStandby.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    d.dismiss();
+                    performStandby();
+                }
+            });
+        }
+
+        // Turn Off
+        View btnTurnOff = d.findViewById(R.id.btn_action_turn_off);
+        if (btnTurnOff != null) {
+            btnTurnOff.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    d.dismiss();
+                    performShutdown();
+                }
+            });
+        }
+
+        // Restart
+        View btnRestart = d.findViewById(R.id.btn_action_restart);
+        if (btnRestart != null) {
+            btnRestart.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    d.dismiss();
+                    performReboot();
+                }
+            });
+        }
+
+        // Cancel
+        View btnCancel = d.findViewById(R.id.btn_action_cancel);
+        if (btnCancel != null) {
+            btnCancel.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    d.dismiss();
+                }
+            });
+        }
+
+        shutdownDialog = d;
+        d.show();
+    }
+
+    private void performStandby() {
+        Toast.makeText(this, "Preparing to Stand By...", Toast.LENGTH_SHORT).show();
+        handler.postDelayed(new Runnable() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
-                if (which == 0) {
+            public void run() {
+                try {
+                    Runtime.getRuntime().exec("input keyevent 26");
+                } catch (Exception e) {
+                    try {
+                        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                        pm.getClass().getMethod("goToSleep", long.class).invoke(pm, SystemClock.uptimeMillis());
+                    } catch (Exception ignored) {}
+                }
+            }
+        }, 400);
+    }
+
+    private void performShutdown() {
+        Toast.makeText(this, "Windows MK is shutting down...", Toast.LENGTH_LONG).show();
+        writePowerAction("shutdown");
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                // 1. ACTION_REQUEST_SHUTDOWN Intent
+                try {
                     Intent shutdown = new Intent("android.intent.action.ACTION_REQUEST_SHUTDOWN");
                     shutdown.putExtra("android.intent.extra.KEY_CONFIRM", false);
                     shutdown.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    try { startActivity(shutdown); } catch (Exception e) {
-                        Toast.makeText(LauncherActivity.this, "Shutting down...", Toast.LENGTH_LONG).show();
-                    }
-                } else if (which == 1) {
-                    Intent reboot = new Intent(Intent.ACTION_REBOOT);
-                    reboot.putExtra("nowait", 1);
-                    reboot.putExtra("interval", 1);
-                    reboot.putExtra("window", 0);
-                    try { sendBroadcast(reboot); } catch (Exception e) {
-                        Toast.makeText(LauncherActivity.this, "Restarting...", Toast.LENGTH_LONG).show();
+                    startActivity(shutdown);
+                } catch (Exception ignored) {}
+
+                // 2. IPowerManager.shutdown
+                try {
+                    Class<?> sm = Class.forName("android.os.ServiceManager");
+                    IBinder b = (IBinder) sm.getMethod("getService", String.class).invoke(null, "power");
+                    Class<?> ipm = Class.forName("android.os.IPowerManager$Stub");
+                    Object service = ipm.getMethod("asInterface", IBinder.class).invoke(null, b);
+                    service.getClass().getMethod("shutdown", boolean.class, boolean.class).invoke(service, false, false);
+                } catch (Exception ignored) {}
+
+                // 3. Shell fallback
+                try {
+                    Runtime.getRuntime().exec(new String[]{"reboot", "-p"});
+                } catch (Exception ignored) {}
+            }
+        }, 600);
+    }
+
+    private void performReboot() {
+        Toast.makeText(this, "Windows MK is restarting...", Toast.LENGTH_LONG).show();
+        writePowerAction("reboot");
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                // 1. IPowerManager.reboot
+                try {
+                    Class<?> sm = Class.forName("android.os.ServiceManager");
+                    IBinder b = (IBinder) sm.getMethod("getService", String.class).invoke(null, "power");
+                    Class<?> ipm = Class.forName("android.os.IPowerManager$Stub");
+                    Object service = ipm.getMethod("asInterface", IBinder.class).invoke(null, b);
+                    service.getClass().getMethod("reboot", boolean.class, String.class, boolean.class).invoke(service, false, null, false);
+                } catch (Exception ignored) {}
+
+                // 2. Broadcast Intents
+                try {
+                    sendBroadcast(new Intent(Intent.ACTION_REBOOT));
+                    sendBroadcast(new Intent("sec.android.intent.action.REBOOT"));
+                } catch (Exception ignored) {}
+
+                // 3. Shell fallback
+                try {
+                    Runtime.getRuntime().exec(new String[]{"reboot"});
+                } catch (Exception ignored) {}
+            }
+        }, 600);
+    }
+
+    private void writePowerAction(String action) {
+        try {
+            File f = new File("/sdcard/power_action");
+            FileOutputStream fos = new FileOutputStream(f);
+            fos.write(action.getBytes());
+            fos.flush();
+            fos.close();
+        } catch (Exception ignored) {}
+        try {
+            File f = new File("/data/local/tmp/power_action");
+            FileOutputStream fos = new FileOutputStream(f);
+            fos.write(action.getBytes());
+            fos.flush();
+            fos.close();
+        } catch (Exception ignored) {}
+    }
+
+    private void setupVolumeControl() {
+        volumePopupContainer = (LinearLayout) findViewById(R.id.volume_popup_container);
+        seekMasterVolume = (SeekBar) findViewById(R.id.seek_master_volume);
+        tvVolumePercent = (TextView) findViewById(R.id.tv_volume_percent);
+        chkVolumeMute = (CheckBox) findViewById(R.id.chk_volume_mute);
+        trayVolume = (ImageView) findViewById(R.id.tray_volume);
+        View btnCloseVolume = findViewById(R.id.btn_close_volume);
+
+        final AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (am == null) return;
+
+        final int maxVol = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        if (seekMasterVolume != null) {
+            seekMasterVolume.setMax(maxVol);
+            int curVol = am.getStreamVolume(AudioManager.STREAM_MUSIC);
+            seekMasterVolume.setProgress(curVol);
+            updateVolumeUI(curVol, maxVol);
+
+            seekMasterVolume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    if (fromUser) {
+                        am.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0);
+                        updateVolumeUI(progress, maxVol);
+                        resetVolumeAutoHide();
                     }
                 }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+                    handler.removeCallbacks(hideVolumeRunnable);
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                    resetVolumeAutoHide();
+                }
+            });
+        }
+
+        if (chkVolumeMute != null) {
+            chkVolumeMute.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    am.setStreamMute(AudioManager.STREAM_MUSIC, isChecked);
+                    if (trayVolume != null) {
+                        trayVolume.setImageResource(isChecked ? R.drawable.ic_tray_volume_mute : R.drawable.ic_tray_volume);
+                    }
+                    resetVolumeAutoHide();
+                }
+            });
+        }
+
+        if (trayVolume != null) {
+            trayVolume.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    toggleVolumeControlPopup();
+                }
+            });
+        }
+
+        if (btnCloseVolume != null) {
+            btnCloseVolume.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (volumePopupContainer != null) {
+                        volumePopupContainer.setVisibility(View.GONE);
+                    }
+                }
+            });
+        }
+    }
+
+    private void updateVolumeUI(int curVol, int maxVol) {
+        if (tvVolumePercent != null) {
+            int pct = maxVol > 0 ? (curVol * 100 / maxVol) : 0;
+            tvVolumePercent.setText(pct + "%");
+        }
+        if (trayVolume != null) {
+            boolean isMuted = (curVol == 0);
+            if (chkVolumeMute != null && chkVolumeMute.isChecked()) {
+                isMuted = true;
             }
-        });
-        b.show();
+            trayVolume.setImageResource(isMuted ? R.drawable.ic_tray_volume_mute : R.drawable.ic_tray_volume);
+        }
+    }
+
+    public void closeVolumePopup() {
+        if (volumePopupContainer != null && volumePopupContainer.getVisibility() == View.VISIBLE) {
+            volumePopupContainer.setVisibility(View.GONE);
+            handler.removeCallbacks(hideVolumeRunnable);
+        }
+    }
+
+    private void resetVolumeAutoHide(long delayMillis) {
+        handler.removeCallbacks(hideVolumeRunnable);
+        if (delayMillis > 0) {
+            handler.postDelayed(hideVolumeRunnable, delayMillis);
+        }
+    }
+
+    private void resetVolumeAutoHide() {
+        resetVolumeAutoHide(6000);
+    }
+
+    private void toggleVolumeControlPopup() {
+        if (volumePopupContainer == null) return;
+        if (volumePopupContainer.getVisibility() == View.VISIBLE) {
+            closeVolumePopup();
+        } else {
+            showVolumeControlPopup(false);
+        }
+    }
+
+    private void showVolumeControlPopup(boolean autoHide) {
+        if (volumePopupContainer == null) return;
+        AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (am != null) {
+            int curVol = am.getStreamVolume(AudioManager.STREAM_MUSIC);
+            int maxVol = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+            if (seekMasterVolume != null) {
+                seekMasterVolume.setMax(maxVol);
+                seekMasterVolume.setProgress(curVol);
+            }
+            updateVolumeUI(curVol, maxVol);
+        }
+        volumePopupContainer.setVisibility(View.VISIBLE);
+        volumePopupContainer.bringToFront();
+        if (autoHide) {
+            resetVolumeAutoHide(6000);
+        } else {
+            handler.removeCallbacks(hideVolumeRunnable);
+        }
+    }
+
+    private void adjustVolume(int direction) {
+        AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (am != null) {
+            am.adjustStreamVolume(AudioManager.STREAM_MUSIC, direction, 0);
+            showVolumeControlPopup(true);
+        }
     }
 
     private void updateClock() {
@@ -1011,10 +1574,10 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
 
             for (final ActivityManager.RunningTaskInfo task : tasks) {
                 if (task.baseActivity == null) continue;
-                String pkg = task.baseActivity.getPackageName();
+                final String pkg = task.baseActivity.getPackageName();
                 if (getPackageName().equals(pkg)) continue;
 
-                CharSequence label;
+                final CharSequence label;
                 Drawable icon;
                 try {
                     label = packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0));
@@ -1058,6 +1621,10 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
                     public void onClick(View v) {
                         try {
                             activityManager.moveTaskToFront(task.id, ActivityManager.MOVE_TASK_WITH_HOME);
+                            Intent overlay = new Intent(LauncherActivity.this, FloatingWindowOverlayService.class);
+                            overlay.putExtra(FloatingWindowOverlayService.EXTRA_PACKAGE_NAME, pkg);
+                            overlay.putExtra(FloatingWindowOverlayService.EXTRA_APP_LABEL, label.toString());
+                            startService(overlay);
                         } catch (Exception ignored) {}
                     }
                 });

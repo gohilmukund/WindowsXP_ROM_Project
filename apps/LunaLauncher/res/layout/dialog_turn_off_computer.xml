@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/shutdown_dim_overlay"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#99000000"
+    android:clickable="true">
+
+    <!-- Centered Windows XP "Turn off computer" Modal Dialog Box -->
+    <LinearLayout
+        android:id="@+id/shutdown_dialog_box"
+        android:layout_width="310dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="#0A246A"
+        android:clickable="true"
+        android:orientation="vertical"
+        android:padding="2dp">
+
+        <!-- Header: Blue bar with "Turn off computer" title & Windows Flag -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:background="#092178"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="12dp"
+            android:paddingRight="10dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Turn off computer"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="38dp"
+                android:layout_height="30dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_turn_off_header_flag" />
+        </LinearLayout>
+
+        <!-- Gradient Accent Line -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#FFFFFFFF" />
+
+        <!-- Center Content Area: Blue Gradient with 3 Circular Action Buttons -->
+        <LinearLayout
+            android:id="@+id/shutdown_content_area"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:background="#4364ED"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp">
+
+            <!-- Stand By Button -->
+            <LinearLayout
+                android:id="@+id/btn_action_standby"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/menu_item_selector"
+                android:clickable="true"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/img_standby"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/btn_standby" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:shadowColor="#80000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="Stand By"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Turn Off Button -->
+            <LinearLayout
+                android:id="@+id/btn_action_turn_off"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/menu_item_selector"
+                android:clickable="true"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/img_turn_off"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/btn_turn_off" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:shadowColor="#80000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="Turn Off"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Restart Button -->
+            <LinearLayout
+                android:id="@+id/btn_action_restart"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/menu_item_selector"
+                android:clickable="true"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/img_restart"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/btn_restart" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:shadowColor="#80000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="2"
+                    android:text="Restart"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Footer Bar: Dark Blue with Cancel Button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="38dp"
+            android:background="#092178"
+            android:gravity="center_vertical|right"
+            android:paddingRight="12dp">
+
+            <Button
+                android:id="@+id/btn_action_cancel"
+                android:layout_width="72dp"
+                android:layout_height="24dp"
+                android:background="#F0F0F0"
+                android:text="Cancel"
+                android:textColor="#000000"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

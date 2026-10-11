@@ -19,7 +19,10 @@ public class FileOperationsManager {
         List<FileItem> drives = new ArrayList<FileItem>();
 
         // Drive C: (Internal Storage)
-        File sdcard = Environment.getExternalStorageDirectory();
+        File sdcard = new File("/sdcard");
+        if (!sdcard.exists() || !sdcard.canRead()) {
+            sdcard = Environment.getExternalStorageDirectory();
+        }
         if (sdcard != null && sdcard.exists()) {
             long total = 0;
             long free = 0;
@@ -84,11 +87,19 @@ public class FileOperationsManager {
         }
 
         File dir = new File(path);
-        if (!dir.exists() || !dir.isDirectory()) {
-            return new ArrayList<FileItem>();
-        }
-
         File[] files = dir.listFiles();
+        if ((files == null || files.length == 0) && (path.equals("/sdcard") || path.equals("/storage/emulated/legacy") || path.equals("/storage/emulated/0"))) {
+            File alt1 = new File("/sdcard");
+            files = alt1.listFiles();
+            if (files == null || files.length == 0) {
+                File alt2 = new File("/storage/emulated/legacy");
+                files = alt2.listFiles();
+            }
+            if (files == null || files.length == 0) {
+                File alt3 = Environment.getExternalStorageDirectory();
+                if (alt3 != null) files = alt3.listFiles();
+            }
+        }
         if (files == null) {
             return new ArrayList<FileItem>();
         }
@@ -192,14 +203,24 @@ public class FileOperationsManager {
 
     public String toWindowsPath(String path) {
         if (path == null) return "";
-        if (path.startsWith("/sdcard")) {
-            return "C:\\" + path.substring(7).replace('/', '\\');
+        if (path.startsWith("/storage/emulated/legacy")) {
+            String sub = path.substring("/storage/emulated/legacy".length());
+            return "C:" + (sub.startsWith("/") ? sub.replace('/', '\\') : (sub.isEmpty() ? "\\" : "\\" + sub.replace('/', '\\')));
+        } else if (path.startsWith("/storage/emulated/0")) {
+            String sub = path.substring("/storage/emulated/0".length());
+            return "C:" + (sub.startsWith("/") ? sub.replace('/', '\\') : (sub.isEmpty() ? "\\" : "\\" + sub.replace('/', '\\')));
+        } else if (path.startsWith("/sdcard")) {
+            String sub = path.substring("/sdcard".length());
+            return "C:" + (sub.startsWith("/") ? sub.replace('/', '\\') : (sub.isEmpty() ? "\\" : "\\" + sub.replace('/', '\\')));
         } else if (path.startsWith("/storage/sdcard0")) {
-            return "C:\\" + path.substring(16).replace('/', '\\');
+            String sub = path.substring("/storage/sdcard0".length());
+            return "C:" + (sub.startsWith("/") ? sub.replace('/', '\\') : (sub.isEmpty() ? "\\" : "\\" + sub.replace('/', '\\')));
         } else if (path.startsWith("/storage/extSdCard")) {
-            return "D:\\" + path.substring(18).replace('/', '\\');
+            String sub = path.substring("/storage/extSdCard".length());
+            return "D:" + (sub.startsWith("/") ? sub.replace('/', '\\') : (sub.isEmpty() ? "\\" : "\\" + sub.replace('/', '\\')));
         } else if (path.startsWith("/system")) {
-            return "S:\\" + path.substring(7).replace('/', '\\');
+            String sub = path.substring("/system".length());
+            return "S:" + (sub.startsWith("/") ? sub.replace('/', '\\') : (sub.isEmpty() ? "\\" : "\\" + sub.replace('/', '\\')));
         }
         return path.replace('/', '\\');
     }

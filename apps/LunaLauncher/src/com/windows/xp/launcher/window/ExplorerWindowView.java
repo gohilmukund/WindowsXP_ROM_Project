@@ -34,6 +34,8 @@ public class ExplorerWindowView extends LinearLayout {
 
     public interface FileActionListener {
         void onOpenTextFile(File file);
+        void onOpenMediaFile(File file);
+        void onOpenImageFile(File file);
     }
 
     public interface OnTitleChangeListener {
@@ -263,6 +265,16 @@ public class ExplorerWindowView extends LinearLayout {
                 fileActionListener.onOpenTextFile(file);
                 return;
             }
+        } else if (ext.equals("png") || ext.equals("jpg") || ext.equals("jpeg") || ext.equals("bmp") || ext.equals("gif")) {
+            if (fileActionListener != null) {
+                fileActionListener.onOpenImageFile(file);
+                return;
+            }
+        } else if (ext.equals("mp3") || ext.equals("wav") || ext.equals("ogg") || ext.equals("m4a") || ext.equals("mp4")) {
+            if (fileActionListener != null) {
+                fileActionListener.onOpenMediaFile(file);
+                return;
+            }
         }
 
         Intent launchIntent = null;
@@ -328,16 +340,34 @@ public class ExplorerWindowView extends LinearLayout {
     }
 
     private void loadDirectory(File dir) {
+        String absPath = dir.getAbsolutePath();
         String title = dir.getName();
-        if (title.isEmpty()) title = dir.getAbsolutePath();
+        int icon = R.drawable.ic_folder;
+        if (absPath.equals("/sdcard") || absPath.equals("/storage/emulated/legacy") || absPath.equals("/storage/emulated/0") || absPath.equals("/storage/sdcard0")) {
+            title = "Local Disk (C:)";
+            icon = R.drawable.ic_drive_c;
+        } else if (absPath.equals("/storage/extSdCard")) {
+            title = "Removable Disk (D:)";
+            icon = R.drawable.ic_drive_d;
+        } else if (absPath.equals("/system")) {
+            title = "System (S:)";
+            icon = R.drawable.ic_drive_c;
+        } else if (title.isEmpty()) {
+            title = absPath;
+        }
         if (titleChangeListener != null) {
-            titleChangeListener.onTitleChange(title, R.drawable.ic_folder);
+            titleChangeListener.onTitleChange(title, icon);
         }
 
         String winPath = fileManager.toWindowsPath(dir.getAbsolutePath());
         etAddress.setText(winPath);
 
         List<FileItem> items = fileManager.getDirectoryContents(dir);
+        if (items.isEmpty() && (absPath.equals("/storage/emulated/legacy") || absPath.equals("/storage/emulated/0"))) {
+            items = fileManager.scanDirectory("/sdcard");
+        } else if (items.isEmpty() && absPath.equals("/sdcard")) {
+            items = fileManager.scanDirectory("/storage/emulated/legacy");
+        }
         fileAdapter.setItems(items);
 
         if (items.isEmpty()) {
