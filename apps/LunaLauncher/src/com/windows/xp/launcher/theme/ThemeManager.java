@@ -48,9 +48,11 @@ public class ThemeManager {
         LUNA_BLUE("Windows XP (Default Blue)"),
         LUNA_OLIVE("Windows XP (Olive Green)"),
         LUNA_SILVER("Windows XP (Silver)"),
+        ROYALE("Windows XP (Royale / Media Center)"),
         CLASSIC("Windows Classic"),
         VISTA("Windows Vista"),
-        WIN7_AERO("Windows 7 Aero Glass");
+        WIN7_AERO("Windows 7 Aero Glass"),
+        WIN11("Windows 11 (Fluent)");
 
         private final String displayName;
 
@@ -181,9 +183,11 @@ public class ThemeManager {
         list.add(new WallpaperItem("Wind", R.drawable.wallpaper_wind));
         list.add(new WallpaperItem("Silver", R.drawable.wallpaper_silver));
         list.add(new WallpaperItem("Olive Green", R.drawable.wallpaper_olive));
+        list.add(new WallpaperItem("Royale Energy Blue", R.drawable.wallpaper_royale));
         list.add(new WallpaperItem("Windows Classic Teal", R.drawable.wallpaper_classic));
         list.add(new WallpaperItem("Windows Vista Aurora", R.drawable.wallpaper_vista));
         list.add(new WallpaperItem("Windows 7 Harmony", R.drawable.wallpaper_win7));
+        list.add(new WallpaperItem("Windows 11 Bloom", R.drawable.wallpaper_win11));
         return list;
     }
 
@@ -260,9 +264,11 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return 0xFF759954;
             case LUNA_SILVER: return 0xFFE2E4EB;
+            case ROYALE: return 0xFF1073E6;
             case CLASSIC: return 0xFF0A246A;
             case VISTA: return 0xDD1B222A;
             case WIN7_AERO: return 0xCC1A385C;
+            case WIN11: return 0xFFE8E8E8;
             case LUNA_BLUE:
             default:
                 return 0xFF0055EA;
@@ -273,9 +279,11 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return 0xFF45672E;
             case LUNA_SILVER: return 0xFFA6ABB8;
+            case ROYALE: return 0xFF0048B3;
             case CLASSIC: return 0xFFA6CAF0;
             case VISTA: return 0xEE0D1217;
             case WIN7_AERO: return 0xDD28588E;
+            case WIN11: return 0xFFE8E8E8;
             case LUNA_BLUE:
             default:
                 return 0xFF00138C;
@@ -286,9 +294,11 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return 0xFF8FA87B;
             case LUNA_SILVER: return 0xFFD8DAE0;
+            case ROYALE: return 0xFF7A96DF;
             case CLASSIC: return 0xFF808080;
             case VISTA: return 0xAA2B333E;
             case WIN7_AERO: return 0x992B4566;
+            case WIN11: return 0xFFF3F3F3;
             case LUNA_BLUE:
             default:
                 return 0xFF7A96DF;
@@ -299,9 +309,11 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return 0xFF6C825B;
             case LUNA_SILVER: return 0xFFB0B4C0;
+            case ROYALE: return 0xFF5A70B2;
             case CLASSIC: return 0xFFB5B5B5;
             case VISTA: return 0xCC1A2028;
             case WIN7_AERO: return 0xAA3B5B84;
+            case WIN11: return 0xFFF3F3F3;
             case LUNA_BLUE:
             default:
                 return 0xFF5A70B2;
@@ -310,8 +322,11 @@ public class ThemeManager {
 
     public int getTitlebarTextColor() {
         switch (currentTheme) {
-            case LUNA_SILVER: return 0xFF000000;
-            default: return 0xFFFFFFFF;
+            case LUNA_SILVER:
+            case WIN11:
+                return 0xFF1C1C1C;
+            default:
+                return 0xFFFFFFFF;
         }
     }
 
@@ -319,9 +334,11 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return 0xFF45672E;
             case LUNA_SILVER: return 0xFFA6ABB8;
+            case ROYALE: return 0xFF0048B3;
             case CLASSIC: return 0xFFD4D0C8;
             case VISTA: return 0xFF2A3440;
             case WIN7_AERO: return 0x99356699;
+            case WIN11: return 0xFFD0D0D0;
             case LUNA_BLUE:
             default:
                 return 0xFF00138C;
@@ -332,9 +349,11 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return R.drawable.taskbar_bg_olive;
             case LUNA_SILVER: return R.drawable.taskbar_bg_silver;
+            case ROYALE: return R.drawable.taskbar_bg_royale;
             case CLASSIC: return R.drawable.taskbar_bg_classic;
             case VISTA: return R.drawable.taskbar_bg_vista;
             case WIN7_AERO: return R.drawable.taskbar_bg_win7;
+            case WIN11: return R.drawable.taskbar_bg_win11;
             case LUNA_BLUE:
             default:
                 return R.drawable.taskbar_bg;
@@ -345,9 +364,11 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return R.drawable.taskbar_tab_bg_olive;
             case LUNA_SILVER: return R.drawable.taskbar_tab_bg_silver;
+            case ROYALE: return R.drawable.taskbar_tab_bg_royale;
             case CLASSIC: return R.drawable.taskbar_tab_bg_classic;
             case VISTA: return R.drawable.taskbar_tab_bg_vista;
             case WIN7_AERO: return R.drawable.taskbar_tab_bg_win7;
+            case WIN11: return R.drawable.taskbar_tab_bg_win11;
             case LUNA_BLUE:
             default:
                 return R.drawable.taskbar_tab_bg;
@@ -358,9 +379,11 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return R.drawable.taskbar_tab_active_olive;
             case LUNA_SILVER: return R.drawable.taskbar_tab_active_silver;
+            case ROYALE: return R.drawable.taskbar_tab_active_royale;
             case CLASSIC: return R.drawable.taskbar_tab_active_classic;
             case VISTA: return R.drawable.taskbar_tab_active_vista;
             case WIN7_AERO: return R.drawable.taskbar_tab_active_win7;
+            case WIN11: return R.drawable.taskbar_tab_active_win11;
             case LUNA_BLUE:
             default:
                 return R.drawable.taskbar_tab_active;
@@ -371,9 +394,111 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_SILVER:
             case CLASSIC:
-                return 0xFF000000;
+            case WIN11:
+                return 0xFF1C1C1C;
             default:
                 return 0xFFFFFFFF;
+        }
+    }
+
+    public int getTaskbarTrayBgRes() {
+        switch (currentTheme) {
+            case LUNA_OLIVE: return R.drawable.tray_bg_olive;
+            case LUNA_SILVER: return R.drawable.tray_bg_silver;
+            case ROYALE: return R.drawable.tray_bg_royale;
+            case WIN7_AERO: return R.drawable.tray_bg_win7;
+            case WIN11: return R.drawable.tray_bg_win11;
+            case CLASSIC: return R.drawable.taskbar_bg_classic;
+            case VISTA: return R.drawable.tray_bg_vista;
+            case LUNA_BLUE:
+            default:
+                return R.drawable.tray_bg;
+        }
+    }
+
+    public int getTaskbarTrayTextColor() {
+        switch (currentTheme) {
+            case LUNA_SILVER:
+            case WIN11:
+                return 0xFF1C1C1C;
+            default:
+                return 0xFFFFFFFF;
+        }
+    }
+
+    public int getTaskbarTrayBatteryColor() {
+        switch (currentTheme) {
+            case LUNA_OLIVE: return 0xFFCBE4B5;
+            case LUNA_SILVER: return 0xFF4A4E58;
+            case ROYALE: return 0xFFB8D3FF;
+            case WIN11: return 0xFF404040;
+            case CLASSIC: return 0xFF000000;
+            case WIN7_AERO: return 0xFFD0E4FA;
+            case LUNA_BLUE:
+            default:
+                return 0xFFC5D9F8;
+        }
+    }
+
+    public int getStartMenuRightPaneBgColor() {
+        switch (currentTheme) {
+            case LUNA_OLIVE: return 0xFFE6EAD5;
+            case LUNA_SILVER: return 0xFFEAECF0;
+            case ROYALE: return 0xFFD2DBEE;
+            case WIN7_AERO: return 0xEE182C44;
+            case WIN11: return 0xFFF5F6F8;
+            case CLASSIC: return 0xFFD4D0C8;
+            case VISTA: return 0xEE1E242B;
+            case LUNA_BLUE:
+            default:
+                return 0xFFD3E5FA;
+        }
+    }
+
+    public int getStartMenuRightPaneTextColor() {
+        switch (currentTheme) {
+            case LUNA_OLIVE: return 0xFF354B1A;
+            case ROYALE: return 0xFF00156E;
+            case WIN7_AERO: return 0xFFFFFFFF;
+            case WIN11: return 0xFF1A1A1A;
+            case CLASSIC:
+            case LUNA_SILVER:
+                return 0xFF000000;
+            case LUNA_BLUE:
+            default:
+                return 0xFF00156E;
+        }
+    }
+
+    public int getStartMenuDividerColor() {
+        switch (currentTheme) {
+            case LUNA_OLIVE: return 0xFFCBD4B6;
+            case LUNA_SILVER: return 0xFFCCD0DA;
+            case ROYALE: return 0xFFAEC5E8;
+            case WIN7_AERO: return 0xFF3A5370;
+            case WIN11: return 0xFFEAEAEA;
+            case CLASSIC: return 0xFF808080;
+            case LUNA_BLUE:
+            default:
+                return 0xFFB5CFF5;
+        }
+    }
+
+    public int getStartButtonWidthDp() {
+        switch (currentTheme) {
+            case VISTA:
+            case WIN7_AERO:
+                return 48;
+            case WIN11:
+                return 42;
+            case CLASSIC:
+                return 65;
+            case LUNA_BLUE:
+            case LUNA_OLIVE:
+            case LUNA_SILVER:
+            case ROYALE:
+            default:
+                return 106;
         }
     }
 
@@ -384,7 +509,9 @@ public class ThemeManager {
     public int getAuthenticStartButtonRes() {
         switch (currentTheme) {
             case LUNA_OLIVE: return R.drawable.start_button_luna_olive;
-            case LUNA_SILVER: return R.drawable.start_button_luna_blue;
+            case LUNA_SILVER: return R.drawable.start_button_luna_silver;
+            case ROYALE: return R.drawable.start_button_royale;
+            case WIN11: return R.drawable.start_button_win11;
             case CLASSIC: return R.drawable.start_button_classic;
             case VISTA: return R.drawable.start_button_vista;
             case WIN7_AERO: return R.drawable.start_button_win7;
@@ -448,9 +575,11 @@ public class ThemeManager {
             case CLASSIC: return "Start";
             case VISTA:
             case WIN7_AERO:
+            case WIN11:
                 return ""; // Orb only
             case LUNA_OLIVE:
             case LUNA_SILVER:
+            case ROYALE:
             case LUNA_BLUE:
             default:
                 return "start";
@@ -464,6 +593,8 @@ public class ThemeManager {
             case WIN7_AERO: return R.drawable.wallpaper_win7;
             case LUNA_OLIVE: return R.drawable.wallpaper_olive;
             case LUNA_SILVER: return R.drawable.wallpaper_silver;
+            case ROYALE: return R.drawable.wallpaper_royale;
+            case WIN11: return R.drawable.wallpaper_win11;
             case LUNA_BLUE:
             default:
                 return R.drawable.bliss_wallpaper;
@@ -474,9 +605,11 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return new int[]{0xFF759954, 0xFF45672E};
             case LUNA_SILVER: return new int[]{0xFFD8DAE0, 0xFFA6ABB8};
+            case ROYALE: return new int[]{0xFF1858D6, 0xFF0A3DA8};
             case CLASSIC: return new int[]{0xFF0A246A, 0xFFA6CAF0};
             case VISTA: return new int[]{0xFF283444, 0xFF0B1017};
             case WIN7_AERO: return new int[]{0xFF224874, 0xFF112338};
+            case WIN11: return new int[]{0xFFFFFFFF, 0xFFFFFFFF};
             case LUNA_BLUE:
             default:
                 return new int[]{0xFF245EDC, 0xFF153B8A};
@@ -487,9 +620,11 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return new int[]{0xFF658A44, 0xFF3D5C26};
             case LUNA_SILVER: return new int[]{0xFFC8CBD2, 0xFF959AA6};
+            case ROYALE: return new int[]{0xFF1858D6, 0xFF0A3DA8};
             case CLASSIC: return new int[]{0xFF0A246A, 0xFF7090C0};
             case VISTA: return new int[]{0xFF1B222A, 0xFF080C12};
             case WIN7_AERO: return new int[]{0xFF18385A, 0xFF0D1E30};
+            case WIN11: return new int[]{0xFFF5F6F8, 0xFFF5F6F8};
             case LUNA_BLUE:
             default:
                 return new int[]{0xFF2D66E0, 0xFF183E9E};
