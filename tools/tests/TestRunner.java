@@ -13,7 +13,8 @@ public class TestRunner {
         System.out.println("=== Running LunaLauncher Regression Test Suite ===");
 
         Class<?>[] testClasses = new Class<?>[] {
-            ThemeManagerTest.class
+            ThemeManagerTest.class,
+            DosBoxConfigTest.class
         };
 
         final List<String> preferredOrder = Arrays.asList(

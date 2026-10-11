@@ -16,9 +16,11 @@ mkdir -p apps/LunaLauncher/build/gen
 aapt package -f -m -J apps/LunaLauncher/build/gen -M apps/LunaLauncher/AndroidManifest.xml -S apps/LunaLauncher/res -I "$ANDROID_JAR"
 
 # Compile source classes needed for test
+DOS_SOURCES=$(find apps/LunaLauncher/src/com/windows/xp/launcher/dos -name "*.java" 2>/dev/null || true)
 javac -source 1.8 -target 1.8 -Xlint:-options -cp "$ANDROID_JAR:build/test_classes" -d build/test_classes \
   apps/LunaLauncher/build/gen/com/windows/xp/launcher/R.java \
   apps/LunaLauncher/src/com/windows/xp/launcher/theme/ThemeManager.java \
+  $DOS_SOURCES \
   tools/tests/*.java
 
 java -cp "build/test_classes:$ANDROID_JAR" tools.tests.TestRunner
