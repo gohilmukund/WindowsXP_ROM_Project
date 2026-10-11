@@ -9,9 +9,20 @@ DRAWABLE_DIR = os.path.join(PROJECT_ROOT, "apps", "LunaLauncher", "res", "drawab
 
 def find_win7_orb_source():
     candidates = [
+        os.path.join(PROJECT_ROOT, "tools", "assets", "win7_orb_256.png"),
         r"C:\Users\gohil\.gemini\antigravity\brain\e4519e1e-a57e-4b5b-8ef0-8128cf9a52bc\scratch\win7_orb_256.png",
         os.path.expanduser("~/.gemini/antigravity/brain/e4519e1e-a57e-4b5b-8ef0-8128cf9a52bc/scratch/win7_orb_256.png"),
         "/mnt/c/Users/gohil/.gemini/antigravity/brain/e4519e1e-a57e-4b5b-8ef0-8128cf9a52bc/scratch/win7_orb_256.png",
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return None
+
+def find_royale_pill_source():
+    candidates = [
+        os.path.join(PROJECT_ROOT, "tools", "assets", "startxproyalebutton.png"),
+        os.path.join(PROJECT_ROOT, "tools", "cache", "RetroBar", "RetroBar", "Resources", "startxproyalebutton.png"),
     ]
     for c in candidates:
         if os.path.exists(c):
@@ -73,42 +84,58 @@ def generate_luna_pill_buttons():
     print(f"[OK] Saved {dest_olive}: size={img_olive.size}")
 
 def generate_start_button_royale():
-    # Authentic Microsoft royale.msstyles pill from RetroBar
-    pill_path = os.path.join(PROJECT_ROOT, "tools", "cache", "RetroBar", "RetroBar", "Resources", "startxproyalebutton.png")
-    if not os.path.exists(pill_path):
-        raise FileNotFoundError(f"Missing RetroBar royale button: {pill_path}")
+    dest_royale = os.path.join(DRAWABLE_DIR, "start_button_royale.png")
+
+    # Authentic Microsoft royale.msstyles pill from tools/assets or cache
+    pill_path = find_royale_pill_source()
+    if not pill_path:
+        if os.path.exists(dest_royale):
+            print(f"[INFO] Royale button source (startxproyalebutton.png) not found; preserving existing {dest_royale}")
+            return
+        raise FileNotFoundError("Missing royale button source (startxproyalebutton.png) in tools/assets or cache")
+
+    font_path = find_framdit_font()
+    if not font_path:
+        if os.path.exists(dest_royale):
+            print(f"[INFO] Franklin Gothic Medium Italic font (framdit.ttf) not found; preserving existing {dest_royale}")
+            return
+        raise FileNotFoundError("Franklin Gothic Medium Italic font (framdit.ttf) not found")
+
+    flag_path = os.path.join(DRAWABLE_DIR, "ic_turn_off_header_flag.png")
+    if not os.path.exists(flag_path):
+        if os.path.exists(dest_royale):
+            print(f"[INFO] Header flag ({flag_path}) not found; preserving existing {dest_royale}")
+            return
+        raise FileNotFoundError(f"Missing header flag: {flag_path}")
+
     pill_src = Image.open(pill_path).convert("RGBA")
     # Crop normal state (top 33px) and resize to 106x34 with LANCZOS
     pill = pill_src.crop((0, 0, 99, 33)).resize((106, 34), Image.Resampling.LANCZOS)
 
     # Paste authentic flag from ic_turn_off_header_flag.png at (14, 9)
-    flag_path = os.path.join(DRAWABLE_DIR, "ic_turn_off_header_flag.png")
-    if not os.path.exists(flag_path):
-        raise FileNotFoundError(f"Missing header flag: {flag_path}")
     flag_src = Image.open(flag_path).convert("RGBA")
     flag_resized = flag_src.resize((18, 17), Image.Resampling.LANCZOS)
     canvas = pill.copy()
     canvas.paste(flag_resized, (14, 9), flag_resized)
 
     # Render 'start' text using Franklin Gothic Medium Italic font
-    font_path = find_framdit_font()
-    if font_path:
-        font = ImageFont.truetype(font_path, 19)
-    else:
-        raise FileNotFoundError("Franklin Gothic Medium Italic font (framdit.ttf) not found")
+    font = ImageFont.truetype(font_path, 19)
     draw = ImageDraw.Draw(canvas)
     # Dark green drop shadow (0, 60, 10, 180) at (39, 7)
     draw.text((39, 7), "start", font=font, fill=(0, 60, 10, 180))
     # White text (255, 255, 255, 255) at (38, 6)
     draw.text((38, 6), "start", font=font, fill=(255, 255, 255, 255))
 
-    dest_royale = os.path.join(DRAWABLE_DIR, "start_button_royale.png")
     canvas.save(dest_royale, "PNG")
     print(f"[OK] Saved {dest_royale}: size={canvas.size}")
 
 def generate_win7_orb():
+    dest_win7 = os.path.join(DRAWABLE_DIR, "start_button_win7.png")
     orb_src_path = find_win7_orb_source()
     if not orb_src_path:
+        if os.path.exists(dest_win7):
+            print(f"[INFO] win7_orb_256.png not found; preserving existing {dest_win7}")
+            return
         raise FileNotFoundError("win7_orb_256.png not found")
     orb = Image.open(orb_src_path).convert("RGBA")
     # Target size: 144x96 (48x32dp at 3x density). Center 31dp (93px) circular orb
@@ -120,7 +147,6 @@ def generate_win7_orb():
     offset_y = (H - orb_size) // 2
     canvas.paste(orb_resized, (offset_x, offset_y), orb_resized)
 
-    dest_win7 = os.path.join(DRAWABLE_DIR, "start_button_win7.png")
     canvas.save(dest_win7, "PNG")
     print(f"[OK] Saved {dest_win7}: size={canvas.size}")
 
@@ -147,35 +173,45 @@ def generate_win11_button():
 
 def generate_wallpapers():
     # 5. wallpaper_win11.png (1024x600 clean master Bloom wallpaper)
+    dest11 = os.path.join(DRAWABLE_DIR, "wallpaper_win11.png")
     win11_src_path = find_win11_wallpaper_source()
     if not win11_src_path:
-        raise FileNotFoundError("Windows 11 master wallpaper img0.jpg not found")
-    img = Image.open(win11_src_path).convert("RGB")
-    target_w, target_h = 1024, 600
-    src_w, src_h = img.size
-    target_aspect = target_w / target_h
-    src_aspect = src_w / src_h
-
-    if src_aspect > target_aspect:
-        crop_w = int(src_h * target_aspect)
-        crop_h = src_h
-        offset_x = (src_w - crop_w) // 2
-        offset_y = 0
+        if os.path.exists(dest11):
+            print(f"[INFO] Windows 11 master wallpaper img0.jpg not found; preserving existing {dest11}")
+        else:
+            raise FileNotFoundError("Windows 11 master wallpaper img0.jpg not found")
     else:
-        crop_w = src_w
-        crop_h = int(src_w / target_aspect)
-        offset_x = 0
-        offset_y = (src_h - crop_h) // 2
+        img = Image.open(win11_src_path).convert("RGB")
+        target_w, target_h = 1024, 600
+        src_w, src_h = img.size
+        target_aspect = target_w / target_h
+        src_aspect = src_w / src_h
 
-    crop_box = (offset_x, offset_y, offset_x + crop_w, offset_y + crop_h)
-    cropped = img.crop(crop_box)
-    wall11 = cropped.resize((target_w, target_h), Image.Resampling.LANCZOS)
-    dest11 = os.path.join(DRAWABLE_DIR, "wallpaper_win11.png")
-    wall11.save(dest11, "PNG")
-    print(f"[OK] Saved {dest11}: size={wall11.size}")
+        if src_aspect > target_aspect:
+            crop_w = int(src_h * target_aspect)
+            crop_h = src_h
+            offset_x = (src_w - crop_w) // 2
+            offset_y = 0
+        else:
+            crop_w = src_w
+            crop_h = int(src_w / target_aspect)
+            offset_x = 0
+            offset_y = (src_h - crop_h) // 2
+
+        crop_box = (offset_x, offset_y, offset_x + crop_w, offset_y + crop_h)
+        cropped = img.crop(crop_box)
+        wall11 = cropped.resize((target_w, target_h), Image.Resampling.LANCZOS)
+        wall11.save(dest11, "PNG")
+        print(f"[OK] Saved {dest11}: size={wall11.size}")
 
     # 6. wallpaper_royale.png (1024x600 Energy Blue)
+    dest_royale = os.path.join(DRAWABLE_DIR, "wallpaper_royale.png")
     bliss_path = os.path.join(DRAWABLE_DIR, "bliss_wallpaper.png")
+    if not os.path.exists(bliss_path):
+        if os.path.exists(dest_royale):
+            print(f"[INFO] Bliss wallpaper ({bliss_path}) not found; preserving existing {dest_royale}")
+            return
+        raise FileNotFoundError(f"Missing bliss wallpaper: {bliss_path}")
     bliss = Image.open(bliss_path).convert("RGB")
     arr = np.array(bliss, dtype=np.float32)
 
@@ -209,7 +245,6 @@ def generate_wallpapers():
 
     out = np.clip(out, 0, 255).astype(np.uint8)
     wall_royale = Image.fromarray(out)
-    dest_royale = os.path.join(DRAWABLE_DIR, "wallpaper_royale.png")
     wall_royale.save(dest_royale, "PNG")
     print(f"[OK] Saved {dest_royale}: size={wall_royale.size}")
 
