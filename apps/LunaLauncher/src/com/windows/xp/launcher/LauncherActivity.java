@@ -477,6 +477,30 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
             }
         });
 
+        View princeIcon = findViewById(R.id.icon_dos_prince);
+        if (princeIcon != null) {
+            princeIcon.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    closeStartMenu();
+                    File exe = new File("/sdcard/DOS/PRINCE/PRINCE.EXE");
+                    openDosApplication(exe, "Prince of Persia", R.drawable.ic_dos_app);
+                }
+            });
+        }
+
+        View doomIcon = findViewById(R.id.icon_dos_doom);
+        if (doomIcon != null) {
+            doomIcon.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    closeStartMenu();
+                    File exe = new File("/sdcard/DOS/DOOM/DOOM.EXE");
+                    openDosApplication(exe, "DOOM", R.drawable.ic_dos_app);
+                }
+            });
+        }
+
         findViewById(R.id.icon_recycle_bin).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1220,7 +1244,7 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
     }
 
     private void showGamesDialog() {
-        String[] games = new String[]{"3D Pinball (Space Cadet)", "Minesweeper", "Solitaire"};
+        String[] games = new String[]{"3D Pinball (Space Cadet)", "Minesweeper", "Solitaire", "Prince of Persia (DOS)", "DOOM (DOS)"};
         AlertDialog.Builder b = new AlertDialog.Builder(this);
         b.setTitle("Windows XP Games");
         b.setItems(games, new DialogInterface.OnClickListener() {
@@ -1234,6 +1258,12 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
                         break;
                     case 1: launchApp("com.windows.xp.minesweeper"); break;
                     case 2: launchApp("com.windows.xp.solitaire"); break;
+                    case 3:
+                        openDosApplication(new File("/sdcard/DOS/PRINCE/PRINCE.EXE"), "Prince of Persia", R.drawable.ic_dos_app);
+                        break;
+                    case 4:
+                        openDosApplication(new File("/sdcard/DOS/DOOM/DOOM.EXE"), "DOOM", R.drawable.ic_dos_app);
+                        break;
                 }
             }
         });
