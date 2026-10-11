@@ -1063,24 +1063,24 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
         if (btnStart != null) {
             btnStart.setBackgroundResource(tm.getAuthenticStartButtonRes());
             ViewGroup.LayoutParams lp = btnStart.getLayoutParams();
-
-            if (newTheme == ThemeManager.Theme.VISTA || newTheme == ThemeManager.Theme.WIN7_AERO) {
-                lp.width = dpToPx(48);
+            if (lp != null) {
+                lp.width = dpToPx(tm.getStartButtonWidthDp());
                 btnStart.setLayoutParams(lp);
-                btnStart.setGravity(Gravity.CENTER);
-                btnStart.setPadding(0, 0, 0, 0);
-            } else if (newTheme == ThemeManager.Theme.CLASSIC) {
-                lp.width = dpToPx(65);
-                btnStart.setLayoutParams(lp);
-                btnStart.setGravity(Gravity.CENTER);
-                btnStart.setPadding(0, 0, 0, 0);
-            } else {
-                // Luna Blue, Olive & Silver (106px wide)
-                lp.width = dpToPx(106);
-                btnStart.setLayoutParams(lp);
-                btnStart.setGravity(Gravity.CENTER_VERTICAL);
-                btnStart.setPadding(0, 0, 0, 0);
             }
+            btnStart.setGravity(tm.getStartButtonWidthDp() < 100 ? Gravity.CENTER : Gravity.CENTER_VERTICAL);
+            btnStart.setPadding(0, 0, 0, 0);
+        }
+
+        // Apply dynamic system tray styling
+        View systemTray = findViewById(R.id.system_tray);
+        if (systemTray != null) {
+            systemTray.setBackgroundResource(tm.getTaskbarTrayBgRes());
+        }
+        if (trayClock != null) {
+            trayClock.setTextColor(tm.getTaskbarTrayTextColor());
+        }
+        if (trayBattery != null) {
+            trayBattery.setTextColor(tm.getTaskbarTrayBatteryColor());
         }
 
         // Hide overlay vector flag/text so authentic downloaded bitmap is shown cleanly
@@ -1128,6 +1128,32 @@ public class LauncherActivity extends Activity implements ThemeManager.OnThemeCh
             int[] bColors = tm.getStartMenuBottomColors();
             GradientDrawable gdBottom = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, bColors);
             smBottom.setBackgroundDrawable(gdBottom);
+        }
+
+        // Apply dynamic start menu right pane styling
+        View smRightPane = findViewById(R.id.start_menu_right_pane);
+        if (smRightPane != null) {
+            smRightPane.setBackgroundColor(tm.getStartMenuRightPaneBgColor());
+            if (smRightPane instanceof ViewGroup) {
+                int rTextColor = tm.getStartMenuRightPaneTextColor();
+                ViewGroup pane = (ViewGroup) smRightPane;
+                for (int i = 0; i < pane.getChildCount(); i++) {
+                    View item = pane.getChildAt(i);
+                    if (item instanceof ViewGroup) {
+                        ViewGroup itemGroup = (ViewGroup) item;
+                        for (int j = 0; j < itemGroup.getChildCount(); j++) {
+                            View child = itemGroup.getChildAt(j);
+                            if (child instanceof TextView) {
+                                ((TextView) child).setTextColor(rTextColor);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        View smRightDivider = findViewById(R.id.start_menu_right_divider);
+        if (smRightDivider != null) {
+            smRightDivider.setBackgroundColor(tm.getStartMenuDividerColor());
         }
 
         View apHeader = findViewById(R.id.all_programs_header_layout);

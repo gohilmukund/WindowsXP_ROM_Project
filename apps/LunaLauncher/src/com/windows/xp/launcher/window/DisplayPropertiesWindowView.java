@@ -46,6 +46,7 @@ public class DisplayPropertiesWindowView extends LinearLayout {
     private OnDialogActionListener actionListener;
     private ThemeManager.Theme selectedTheme;
     private ThemeManager.WallpaperItem selectedWallpaper;
+    private boolean hasUserModifiedWallpaper = false;
 
     private CrtPreviewView crtThemePreview;
     private CrtPreviewView crtDesktopPreview;
@@ -165,7 +166,7 @@ public class DisplayPropertiesWindowView extends LinearLayout {
         }
 
         // Apply wallpaper if explicitly selected
-        if (selectedWallpaper != null) {
+        if (hasUserModifiedWallpaper && selectedWallpaper != null) {
             if (selectedWallpaper.isCustom()) {
                 tm.setUserWallpaperPath(selectedWallpaper.getFilePath());
             } else {
@@ -173,6 +174,7 @@ public class DisplayPropertiesWindowView extends LinearLayout {
             }
             changed = true;
         }
+        hasUserModifiedWallpaper = false;
 
         if (changed) {
             Toast.makeText(getContext(), "Display settings applied", Toast.LENGTH_SHORT).show();
@@ -248,7 +250,12 @@ public class DisplayPropertiesWindowView extends LinearLayout {
                 if (crtThemePreview != null) {
                     crtThemePreview.setPreviewTheme(selectedTheme);
                 }
-                if (btnApply != null) btnApply.setEnabled(true);
+                if (crtDesktopPreview != null) {
+                    crtDesktopPreview.setPreviewTheme(selectedTheme);
+                }
+                if (selectedTheme != ThemeManager.getInstance().getCurrentTheme() || hasUserModifiedWallpaper) {
+                    if (btnApply != null) btnApply.setEnabled(true);
+                }
             }
 
             @Override public void onNothingSelected(AdapterView<?> parent) {}
@@ -439,6 +446,7 @@ public class DisplayPropertiesWindowView extends LinearLayout {
             row.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    hasUserModifiedWallpaper = true;
                     selectedWallpaper = item;
                     if (crtDesktopPreview != null) {
                         crtDesktopPreview.setPreviewWallpaper(item.getResId(), item.getFilePath());
@@ -515,6 +523,7 @@ public class DisplayPropertiesWindowView extends LinearLayout {
                 // Insert at top of list and select
                 wallpaperList.add(0, customItem);
                 selectedWallpaper = customItem;
+                hasUserModifiedWallpaper = true;
 
                 if (crtDesktopPreview != null) {
                     crtDesktopPreview.setPreviewWallpaper(0, chosen.getAbsolutePath());
@@ -551,6 +560,11 @@ public class DisplayPropertiesWindowView extends LinearLayout {
         private Bitmap previewWallpaperBitmap = null;
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
+        private final RectF bezelRect = new RectF();
+        private final RectF standBaseRect = new RectF();
+        private final Rect srcRect = new Rect();
+        private final Rect dstRect = new Rect();
+
         public CrtPreviewView(Context context) {
             super(context);
             initDefaultWallpaper();
@@ -566,7 +580,6 @@ public class DisplayPropertiesWindowView extends LinearLayout {
             this.previewTheme = t;
             int wallRes = getThemeDefaultWallRes(t);
             setPreviewWallpaper(wallRes, null);
-            invalidate();
         }
 
         private int getThemeDefaultWallRes(ThemeManager.Theme t) {
@@ -576,6 +589,8 @@ public class DisplayPropertiesWindowView extends LinearLayout {
                 case WIN7_AERO: return R.drawable.wallpaper_win7;
                 case LUNA_OLIVE: return R.drawable.wallpaper_olive;
                 case LUNA_SILVER: return R.drawable.wallpaper_silver;
+                case ROYALE: return R.drawable.wallpaper_royale;
+                case WIN11: return R.drawable.wallpaper_win11;
                 case LUNA_BLUE:
                 default:
                     return R.drawable.bliss_wallpaper;
@@ -610,13 +625,14 @@ public class DisplayPropertiesWindowView extends LinearLayout {
 
             // 1. CRT Monitor Beige Bezel
             paint.setColor(0xFFD6D0C0);
-            RectF bezel = new RectF(4, 4, w - 4, h - 20);
-            canvas.drawRoundRect(bezel, 8, 8, paint);
+            bezelRect.set(4, 4, w - 4, h - 20);
+            canvas.drawRoundRect(bezelRect, 8, 8, paint);
 
             // Stand
             paint.setColor(0xFFB8B0A0);
             canvas.drawRect(w / 2 - 20, h - 20, w / 2 + 20, h - 6, paint);
-            canvas.drawRoundRect(new RectF(w / 2 - 40, h - 8, w / 2 + 40, h), 4, 4, paint);
+            standBaseRect.set(w / 2 - 40, h - 8, w / 2 + 40, h);
+            canvas.drawRoundRect(standBaseRect, 4, 4, paint);
 
             // 2. Inner Screen
             int screenX = 14;
@@ -627,7 +643,6 @@ public class DisplayPropertiesWindowView extends LinearLayout {
             int wallColor = 0xFF2B5B9C;
             int taskbarColor = 0xFF245EDC;
             int titleStart = 0xFF0055EA;
-            int titleEnd = 0xFF00138C;
             int startBtnColor = 0xFF3C9E35;
 
             switch (previewTheme) {
@@ -635,36 +650,43 @@ public class DisplayPropertiesWindowView extends LinearLayout {
                     wallColor = 0xFF587A3E;
                     taskbarColor = 0xFF678540;
                     titleStart = 0xFF759954;
-                    titleEnd = 0xFF45672E;
                     startBtnColor = 0xFF6A8A45;
                     break;
                 case LUNA_SILVER:
                     wallColor = 0xFF70788C;
                     taskbarColor = 0xFFB4BAC9;
                     titleStart = 0xFFE2E4EB;
-                    titleEnd = 0xFFA6ABB8;
                     startBtnColor = 0xFF3C9E35;
+                    break;
+                case ROYALE:
+                    wallColor = 0xFF10488A;
+                    taskbarColor = 0xFF003B99;
+                    titleStart = 0xFF1073E6;
+                    startBtnColor = 0xFF28A048;
                     break;
                 case CLASSIC:
                     wallColor = 0xFF008080;
                     taskbarColor = 0xFFD4D0C8;
                     titleStart = 0xFF0A246A;
-                    titleEnd = 0xFFA6CAF0;
                     startBtnColor = 0xFFD4D0C8;
                     break;
                 case VISTA:
                     wallColor = 0xFF14243B;
                     taskbarColor = 0xFF141920;
                     titleStart = 0xFF1B222A;
-                    titleEnd = 0xFF0D1217;
                     startBtnColor = 0xFF263342;
                     break;
                 case WIN7_AERO:
                     wallColor = 0xFF1A4676;
                     taskbarColor = 0xFF143657;
                     titleStart = 0xFF1A385C;
-                    titleEnd = 0xFF28588E;
                     startBtnColor = 0xFF2164A8;
+                    break;
+                case WIN11:
+                    wallColor = 0xFFE0E8F5;
+                    taskbarColor = 0xFFF3F3F3;
+                    titleStart = 0xFFE8E8E8;
+                    startBtnColor = 0xFF0078D4;
                     break;
             }
 
@@ -672,9 +694,9 @@ public class DisplayPropertiesWindowView extends LinearLayout {
             canvas.save();
             canvas.clipRect(screenX, screenY, screenX + screenW, screenY + screenH);
             if (previewWallpaperBitmap != null && !previewWallpaperBitmap.isRecycled()) {
-                Rect src = new Rect(0, 0, previewWallpaperBitmap.getWidth(), previewWallpaperBitmap.getHeight());
-                Rect dst = new Rect(screenX, screenY, screenX + screenW, screenY + screenH);
-                canvas.drawBitmap(previewWallpaperBitmap, src, dst, paint);
+                srcRect.set(0, 0, previewWallpaperBitmap.getWidth(), previewWallpaperBitmap.getHeight());
+                dstRect.set(screenX, screenY, screenX + screenW, screenY + screenH);
+                canvas.drawBitmap(previewWallpaperBitmap, srcRect, dstRect, paint);
             } else if (previewWallpaperDrawable != null) {
                 previewWallpaperDrawable.setBounds(screenX, screenY, screenX + screenW, screenY + screenH);
                 previewWallpaperDrawable.draw(canvas);
@@ -715,9 +737,11 @@ public class DisplayPropertiesWindowView extends LinearLayout {
             switch (previewTheme) {
                 case LUNA_OLIVE: tabColor = 0xFF465F29; break;
                 case LUNA_SILVER: tabColor = 0xFF969CAE; break;
+                case ROYALE: tabColor = 0xFF002B7A; break;
                 case CLASSIC: tabColor = 0xFFC8C4BC; break;
                 case VISTA: tabColor = 0xFF284A6E; break;
                 case WIN7_AERO: tabColor = 0xFF4E92CC; break;
+                case WIN11: tabColor = 0xFFD0D0D0; break;
             }
             paint.setColor(tabColor);
             canvas.drawRect(screenX + 28, screenY + screenH - 9, screenX + 62, screenY + screenH - 1, paint);
