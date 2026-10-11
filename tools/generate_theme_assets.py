@@ -4,9 +4,9 @@ import colorsys
 import numpy as np
 from PIL import Image, ImageDraw
 
-PROJECT_ROOT = "/mnt/c/Users/gohil/Downloads/Samsung_Tab3_SM-T210_Tools/WindowsXP_ROM_Project"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DRAWABLE_DIR = os.path.join(PROJECT_ROOT, "apps/LunaLauncher/res/drawable")
-REF_DIR = "/mnt/c/Users/gohil/.gemini/antigravity/brain/e4519e1e-a57e-4b5b-8ef0-8128cf9a52bc/.user_uploaded"
+REF_DIR = os.path.join(os.path.expanduser("~"), ".gemini/antigravity/brain/e4519e1e-a57e-4b5b-8ef0-8128cf9a52bc/.user_uploaded")
 
 def generate_luna_pill_buttons():
     # Base authentic Luna button
