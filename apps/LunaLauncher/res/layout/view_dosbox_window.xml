@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- DOS Video Surface View centered in 4:3 Aspect Ratio -->
+    <SurfaceView
+        android:id="@+id/dosbox_surface"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true" />
+
+    <!-- Collapsible Quick Action Utility Bar for touch gaming -->
+    <LinearLayout
+        android:id="@+id/dosbox_quick_bar"
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:layout_alignParentBottom="true"
+        android:background="#D0202020"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp">
+
+        <Button
+            android:id="@+id/btn_dos_esc"
+            android:layout_width="44dp"
+            android:layout_height="28dp"
+            android:text="ESC"
+            android:textSize="10sp"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/btn_dos_enter"
+            android:layout_width="54dp"
+            android:layout_height="28dp"
+            android:layout_marginLeft="4dp"
+            android:text="ENTER"
+            android:textSize="10sp"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/btn_dos_space"
+            android:layout_width="54dp"
+            android:layout_height="28dp"
+            android:layout_marginLeft="4dp"
+            android:text="SPACE"
+            android:textSize="10sp"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/btn_dos_up"
+            android:layout_width="36dp"
+            android:layout_height="28dp"
+            android:layout_marginLeft="12dp"
+            android:text="▲"
+            android:textSize="10sp"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/btn_dos_down"
+            android:layout_width="36dp"
+            android:layout_height="28dp"
+            android:layout_marginLeft="2dp"
+            android:text="▼"
+            android:textSize="10sp"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/btn_dos_left"
+            android:layout_width="36dp"
+            android:layout_height="28dp"
+            android:layout_marginLeft="2dp"
+            android:text="◀"
+            android:textSize="10sp"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/btn_dos_right"
+            android:layout_width="36dp"
+            android:layout_height="28dp"
+            android:layout_marginLeft="2dp"
+            android:text="▶"
+            android:textSize="10sp"
+            android:textColor="#FFFFFF" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/btn_dos_keyboard"
+            android:layout_width="48dp"
+            android:layout_height="28dp"
+            android:text="KBD"
+            android:textSize="10sp"
+            android:textColor="#FFCC00" />
+    </LinearLayout>
+</RelativeLayout>
