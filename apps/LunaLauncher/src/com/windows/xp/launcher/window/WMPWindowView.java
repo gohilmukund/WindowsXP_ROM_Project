@@ -4,6 +4,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
@@ -49,6 +50,7 @@ public class WMPWindowView extends LinearLayout {
     }
 
     private VideoView videoView;
+    private MediaPlayer audioPlayer;
     private VisualizerView visualizerView;
     private TextView tvTrackStatus;
     private TextView tvTimeDisplay;
@@ -76,9 +78,22 @@ public class WMPWindowView extends LinearLayout {
     private final Runnable progressRunnable = new Runnable() {
         @Override
         public void run() {
-            if (videoView != null && isPlaying) {
-                int current = videoView.getCurrentPosition();
-                int total = videoView.getDuration();
+            if (isPlaying) {
+                int current = 0;
+                int total = 0;
+                if (isCurrentTrackVideo()) {
+                    if (videoView != null) {
+                        current = videoView.getCurrentPosition();
+                        total = videoView.getDuration();
+                    }
+                } else {
+                    if (audioPlayer != null) {
+                        try {
+                            current = audioPlayer.getCurrentPosition();
+                            total = audioPlayer.getDuration();
+                        } catch (Exception ignored) {}
+                    }
+                }
                 if (total > 0) {
                     seekBar.setMax(total);
                     seekBar.setProgress(current);
@@ -88,6 +103,13 @@ public class WMPWindowView extends LinearLayout {
             }
         }
     };
+
+    private boolean isCurrentTrackVideo() {
+        if (currentTrackIndex >= 0 && currentTrackIndex < playlist.size()) {
+            return playlist.get(currentTrackIndex).isVideo;
+        }
+        return false;
+    }
 
     public WMPWindowView(Context context) {
         super(context);
@@ -360,7 +382,54 @@ public class WMPWindowView extends LinearLayout {
             }
         } catch (Exception ignored) {}
 
-        // 3. Video tracks from MediaStore (External & Internal)
+        // 3. Scan system media audio ringtones & notifications directory (ensuring all authentic tracks are present)
+        String[] sysAudioDirs = new String[]{"/system/media/audio/ringtones", "/system/media/audio/notifications"};
+        for (String dirPath : sysAudioDirs) {
+            File aDir = new File(dirPath);
+            if (aDir.exists() && aDir.listFiles() != null) {
+                for (File f : aDir.listFiles()) {
+                    String name = f.getName().toLowerCase();
+                    if (name.endsWith(".ogg") || name.endsWith(".mp3") || name.endsWith(".wav")) {
+                        String cleanTitle = f.getName().replace(".ogg", "").replace(".mp3", "").replace(".wav", "").replace("S_", "").replace("_", " ");
+                        boolean exists = false;
+                        for (MediaTrack t : playlist) {
+                            if (f.getAbsolutePath().equals(t.path)) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists) {
+                            playlist.add(new MediaTrack(playlist.size(), cleanTitle, f.getAbsolutePath(), 30000, Uri.fromFile(f), false));
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Scan local user audio directories (/sdcard/Music, /sdcard/Download)
+        String[] userAudioDirs = new String[]{"/sdcard/Music", "/sdcard/Download"};
+        for (String dirPath : userAudioDirs) {
+            File uDir = new File(dirPath);
+            if (uDir.exists() && uDir.listFiles() != null) {
+                for (File f : uDir.listFiles()) {
+                    String name = f.getName().toLowerCase();
+                    if (name.endsWith(".mp3") || name.endsWith(".ogg") || name.endsWith(".wav") || name.endsWith(".m4a")) {
+                        boolean exists = false;
+                        for (MediaTrack t : playlist) {
+                            if (f.getAbsolutePath().equals(t.path)) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists) {
+                            playlist.add(new MediaTrack(playlist.size(), f.getName(), f.getAbsolutePath(), 0, Uri.fromFile(f), false));
+                        }
+                    }
+                }
+            }
+        }
+
+        // 5. Video tracks from MediaStore (External & Internal)
         try {
             Uri extVideoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
             String[] vProj = new String[]{
@@ -385,7 +454,7 @@ public class WMPWindowView extends LinearLayout {
             }
         } catch (Exception ignored) {}
 
-        // 4. Scan local video directories (/sdcard/Movies, /sdcard/DCIM, /sdcard/Download)
+        // 6. Scan local video directories (/sdcard/Movies, /sdcard/DCIM, /sdcard/Download)
         String[] videoDirs = new String[]{"/sdcard/Movies", "/sdcard/DCIM/Camera", "/sdcard/Download", "/sdcard/Video"};
         for (String dirPath : videoDirs) {
             File vDir = new File(dirPath);
@@ -394,20 +463,6 @@ public class WMPWindowView extends LinearLayout {
                     String n = f.getName().toLowerCase();
                     if (n.endsWith(".mp4") || n.endsWith(".3gp") || n.endsWith(".mkv") || n.endsWith(".webm")) {
                         playlist.add(new MediaTrack(playlist.size(), "[Video] " + f.getName(), f.getAbsolutePath(), 0, Uri.fromFile(f), true));
-                    }
-                }
-            }
-        }
-
-        // 5. Fallback ringtones if audio is still empty
-        if (playlist.isEmpty()) {
-            File ringtonesDir = new File("/system/media/audio/ringtones");
-            if (ringtonesDir.exists() && ringtonesDir.listFiles() != null) {
-                for (File f : ringtonesDir.listFiles()) {
-                    String name = f.getName();
-                    if (name.endsWith(".ogg") || name.endsWith(".mp3")) {
-                        String cleanTitle = name.replace(".ogg", "").replace(".mp3", "").replace("S_", "").replace("_", " ");
-                        playlist.add(new MediaTrack(playlist.size(), cleanTitle, f.getAbsolutePath(), 30000, Uri.fromFile(f), false));
                     }
                 }
             }
@@ -438,22 +493,71 @@ public class WMPWindowView extends LinearLayout {
         MediaTrack track = playlist.get(index);
         tvTrackStatus.setText(track.title);
 
-        videoView.setVideoURI(track.uri);
-        videoView.start();
-        isPlaying = true;
-        btnPlayPause.setImageResource(R.drawable.ic_wmp_pause);
-
         if (track.isVideo) {
+            if (audioPlayer != null && audioPlayer.isPlaying()) {
+                try {
+                    audioPlayer.stop();
+                    audioPlayer.reset();
+                } catch (Exception ignored) {}
+            }
             visualizerView.setVisibility(GONE);
             visualizerView.setPlaying(false);
             videoView.setVisibility(VISIBLE);
+            videoView.setVideoURI(track.uri);
+            videoView.start();
         } else {
+            if (videoView != null && videoView.isPlaying()) {
+                videoView.stopPlayback();
+            }
             videoView.setVisibility(GONE);
             visualizerView.setVisibility(VISIBLE);
             visualizerView.setTrackInfo(track.title, "Windows Media Player 11");
             visualizerView.setPlaying(true);
+
+            try {
+                if (audioPlayer == null) {
+                    audioPlayer = new MediaPlayer();
+                    audioPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                    audioPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                        @Override
+                        public void onCompletion(MediaPlayer mp) {
+                            if (!playlist.isEmpty()) {
+                                int next = (currentTrackIndex + 1) % playlist.size();
+                                playTrack(next);
+                            } else {
+                                isPlaying = false;
+                                btnPlayPause.setImageResource(R.drawable.ic_wmp_play);
+                                visualizerView.setPlaying(false);
+                            }
+                        }
+                    });
+                    audioPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                        @Override
+                        public boolean onError(MediaPlayer mp, int what, int extra) {
+                            isPlaying = false;
+                            btnPlayPause.setImageResource(R.drawable.ic_wmp_play);
+                            visualizerView.setPlaying(false);
+                            return true;
+                        }
+                    });
+                } else {
+                    audioPlayer.reset();
+                }
+                if (track.path != null && new File(track.path).exists()) {
+                    audioPlayer.setDataSource(track.path);
+                } else {
+                    audioPlayer.setDataSource(getContext(), track.uri);
+                }
+                audioPlayer.prepare();
+                audioPlayer.start();
+            } catch (Exception e) {
+                e.printStackTrace();
+                Toast.makeText(getContext(), "Error playing audio: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
         }
 
+        isPlaying = true;
+        btnPlayPause.setImageResource(R.drawable.ic_wmp_pause);
         progressHandler.post(progressRunnable);
         playlistAdapter.notifyDataSetChanged();
     }
@@ -470,22 +574,40 @@ public class WMPWindowView extends LinearLayout {
             @Override
             public void onClick(View v) {
                 if (isPlaying) {
-                    videoView.pause();
+                    if (isCurrentTrackVideo()) {
+                        if (videoView != null) videoView.pause();
+                    } else {
+                        if (audioPlayer != null) audioPlayer.pause();
+                    }
                     isPlaying = false;
                     btnPlayPause.setImageResource(R.drawable.ic_wmp_play);
                     visualizerView.setPlaying(false);
                 } else {
                     if (currentTrackIndex >= 0 && currentTrackIndex < playlist.size()) {
-                        if (videoView.getCurrentPosition() > 0) {
-                            videoView.start();
-                            isPlaying = true;
-                            btnPlayPause.setImageResource(R.drawable.ic_wmp_pause);
-                            if (!playlist.get(currentTrackIndex).isVideo) {
-                                visualizerView.setPlaying(true);
+                        boolean isVideo = playlist.get(currentTrackIndex).isVideo;
+                        if (isVideo) {
+                            if (videoView.getCurrentPosition() > 0) {
+                                videoView.start();
+                                isPlaying = true;
+                                btnPlayPause.setImageResource(R.drawable.ic_wmp_pause);
+                                progressHandler.post(progressRunnable);
+                            } else {
+                                playTrack(currentTrackIndex);
                             }
-                            progressHandler.post(progressRunnable);
                         } else {
-                            playTrack(currentTrackIndex);
+                            if (audioPlayer != null) {
+                                try {
+                                    audioPlayer.start();
+                                    isPlaying = true;
+                                    btnPlayPause.setImageResource(R.drawable.ic_wmp_pause);
+                                    visualizerView.setPlaying(true);
+                                    progressHandler.post(progressRunnable);
+                                } catch (Exception e) {
+                                    playTrack(currentTrackIndex);
+                                }
+                            } else {
+                                playTrack(currentTrackIndex);
+                            }
                         }
                     } else if (!playlist.isEmpty()) {
                         playTrack(0);
@@ -516,7 +638,15 @@ public class WMPWindowView extends LinearLayout {
         btnStop.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                videoView.stopPlayback();
+                if (videoView != null) {
+                    videoView.stopPlayback();
+                }
+                if (audioPlayer != null) {
+                    try {
+                        audioPlayer.stop();
+                        audioPlayer.reset();
+                    } catch (Exception ignored) {}
+                }
                 isPlaying = false;
                 btnPlayPause.setImageResource(R.drawable.ic_wmp_play);
                 visualizerView.setPlaying(false);
@@ -569,8 +699,16 @@ public class WMPWindowView extends LinearLayout {
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser && videoView != null) {
-                    videoView.seekTo(progress);
+                if (fromUser) {
+                    if (isCurrentTrackVideo()) {
+                        if (videoView != null) videoView.seekTo(progress);
+                    } else {
+                        if (audioPlayer != null) {
+                            try {
+                                audioPlayer.seekTo(progress);
+                            } catch (Exception ignored) {}
+                        }
+                    }
                 }
             }
 
@@ -639,6 +777,13 @@ public class WMPWindowView extends LinearLayout {
         }
         if (videoView != null) {
             videoView.stopPlayback();
+        }
+        if (audioPlayer != null) {
+            try {
+                audioPlayer.stop();
+                audioPlayer.release();
+            } catch (Exception ignored) {}
+            audioPlayer = null;
         }
     }
 

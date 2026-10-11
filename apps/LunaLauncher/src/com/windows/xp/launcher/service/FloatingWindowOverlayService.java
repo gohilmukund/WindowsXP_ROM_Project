@@ -51,6 +51,14 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
     private ImageView btnMax;
     private ImageView btnClose;
 
+    // Window Frame Border Overlay (for Restored Floating Window)
+    private View windowBorderView;
+    private WindowManager.LayoutParams borderParams;
+
+    // Immersive Mode Exit Pill
+    private LinearLayout immersivePillView;
+    private WindowManager.LayoutParams pillParams;
+
     // Bottom Taskbar Overlay
     private RelativeLayout taskbarOverlayView;
     private WindowManager.LayoutParams taskbarParams;
@@ -61,6 +69,13 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
     private String packageName = "";
     private String appLabel = "Application";
     private boolean isRestored = false;
+    private boolean isImmersive = false;
+
+    // Restored window coordinates
+    private int winX = 112;
+    private int winY = 32;
+    private int winW = 800;
+    private int winH = 480;
 
     // Drag-to-move coordinates
     private int initialX, initialY;
@@ -82,16 +97,31 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
                         if (cn != null) {
                             String topPkg = cn.getPackageName();
                             if (getPackageName().equals(topPkg) || topPkg.contains("keyguard")) {
-                                // User is on desktop or lockscreen - hide overlays
+                                // User returned to desktop or lockscreen - hide overlays and clear overscan
+                                if (isRestored) {
+                                    isRestored = false;
+                                    resetOverscan();
+                                }
                                 hideOverlay();
+                                hideBorder();
+                                hideImmersivePill();
                             } else {
                                 // User is in an external app
                                 if (!topPkg.equals(packageName)) {
                                     updateForPackage(topPkg);
                                 }
-                                showOverlay();
-                                refreshOverlayTabs();
-                                updateOverlayClock();
+                                if (!isImmersive) {
+                                    showOverlay();
+                                    if (isRestored) {
+                                        showBorder();
+                                        hideTaskbar();
+                                    } else {
+                                        hideBorder();
+                                        showTaskbar();
+                                    }
+                                    refreshOverlayTabs();
+                                    updateOverlayClock();
+                                }
                             }
                         }
                     }
@@ -115,6 +145,8 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
         ThemeManager.getInstance().addListener(this);
 
         createTitleBarOverlay();
+        createWindowBorderOverlay();
+        createImmersivePillOverlay();
         createTaskbarOverlay();
 
         isPollingActive = true;
@@ -125,7 +157,10 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
             if (ACTION_CLOSE_OVERLAY.equals(intent.getAction())) {
+                resetOverscan();
                 hideOverlay();
+                hideBorder();
+                hideImmersivePill();
                 return START_NOT_STICKY;
             }
             if (intent.hasExtra(EXTRA_PACKAGE_NAME)) {
@@ -142,9 +177,18 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
                 }
             }
         }
-        showOverlay();
-        refreshOverlayTabs();
-        updateOverlayClock();
+        if (!isImmersive) {
+            showOverlay();
+            if (isRestored) {
+                showBorder();
+                hideTaskbar();
+            } else {
+                hideBorder();
+                showTaskbar();
+            }
+            refreshOverlayTabs();
+            updateOverlayClock();
+        }
         return START_NOT_STICKY;
     }
 
@@ -188,7 +232,6 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
         titleBarView.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, heightPx));
         titleBarView.setPadding(dpToPx(4), dpToPx(2), dpToPx(4), dpToPx(2));
-        applyThemeColors();
 
         // App Icon (18dp)
         imgIcon = new ImageView(this);
@@ -224,9 +267,9 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
         btnMin.setLayoutParams(minLp);
         btnContainer.addView(btnMin);
 
-        // Maximize / Restore
+        // Maximize / Restore (starts in maximized mode, so icon is restore)
         btnMax = new ImageView(this);
-        btnMax.setImageResource(R.drawable.btn_max);
+        btnMax.setImageResource(R.drawable.btn_restore);
         LinearLayout.LayoutParams maxLp = new LinearLayout.LayoutParams(ctrlSize, ctrlSize);
         maxLp.rightMargin = ctrlMargin;
         btnMax.setLayoutParams(maxLp);
@@ -260,6 +303,81 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
         titleBarView.addView(tvTitle);
 
         setupTitleBarListeners();
+        applyThemeColors();
+    }
+
+    private void createWindowBorderOverlay() {
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+        winW = dpToPx(760);
+        winH = dpToPx(480);
+        winX = (screenW - winW) / 2;
+        winY = dpToPx(32);
+
+        windowBorderView = new View(this);
+        borderParams = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.TYPE_SYSTEM_ERROR,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT);
+        borderParams.gravity = Gravity.TOP | Gravity.LEFT;
+        borderParams.x = 0;
+        borderParams.y = 0;
+        updateBorderDrawable();
+    }
+
+    private void updateBorderDrawable() {
+        if (windowBorderView == null) return;
+        ThemeManager tm = ThemeManager.getInstance();
+        GradientDrawable border = new GradientDrawable();
+        border.setColor(Color.TRANSPARENT);
+        border.setStroke(dpToPx(3), tm.getWindowBorderColor());
+        border.setCornerRadius(dpToPx(4));
+        windowBorderView.setBackgroundDrawable(border);
+    }
+
+    private void createImmersivePillOverlay() {
+        immersivePillView = new LinearLayout(this);
+        immersivePillView.setOrientation(LinearLayout.HORIZONTAL);
+        immersivePillView.setGravity(Gravity.CENTER);
+        immersivePillView.setPadding(dpToPx(10), dpToPx(3), dpToPx(10), dpToPx(3));
+
+        GradientDrawable pillBg = new GradientDrawable();
+        pillBg.setColor(0xCC1A2436);
+        pillBg.setCornerRadii(new float[]{0, 0, 0, 0, dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6)});
+        pillBg.setStroke(dpToPx(1), 0x88FFFFFF);
+        immersivePillView.setBackgroundDrawable(pillBg);
+
+        ImageView pillIcon = new ImageView(this);
+        pillIcon.setImageResource(R.drawable.btn_restore);
+        LinearLayout.LayoutParams icLp = new LinearLayout.LayoutParams(dpToPx(14), dpToPx(14));
+        icLp.rightMargin = dpToPx(6);
+        immersivePillView.addView(pillIcon, icLp);
+
+        TextView pillText = new TextView(this);
+        pillText.setText("Exit Fullscreen");
+        pillText.setTextColor(Color.WHITE);
+        pillText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
+        pillText.setTypeface(Typeface.DEFAULT_BOLD);
+        immersivePillView.addView(pillText);
+
+        pillParams = new WindowManager.LayoutParams(
+                dpToPx(120),
+                dpToPx(24),
+                WindowManager.LayoutParams.TYPE_SYSTEM_ERROR,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.TRANSLUCENT);
+        pillParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        pillParams.y = 0;
+
+        immersivePillView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleImmersiveMode();
+            }
+        });
     }
 
     private void createTaskbarOverlay() {
@@ -445,48 +563,76 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
             }
         });
 
+        // Click to toggle Restore / Maximize
         btnMax.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                android.util.Log.i("FloatingOverlay", "btnMax CLICKED! isRestored=" + isRestored);
                 toggleRestoreMode();
+            }
+        });
+
+        // Long click to toggle Immersive mode (matching WindowFrameView)
+        btnMax.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                android.util.Log.i("FloatingOverlay", "btnMax LONG CLICKED! isImmersive=" + isImmersive);
+                toggleImmersiveMode();
+                return true;
             }
         });
 
         btnClose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                android.util.Log.i("FloatingOverlay", "btnClose CLICKED!");
                 closeApp();
             }
         });
 
         // Drag to move window frame
         titleBarView.setOnTouchListener(new View.OnTouchListener() {
+            private int dragWinX, dragWinY;
+            private boolean isDragging = false;
+
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 // If touching within the right button area, let buttons handle clicks
-                if (v.getWidth() > 0 && event.getX() > v.getWidth() - dpToPx(85)) {
+                int btnAreaWidth = dpToPx(90);
+                if (v.getWidth() > 0 && event.getX() > (v.getWidth() - btnAreaWidth)) {
+                    return false;
+                }
+                if (!isRestored) {
                     return false;
                 }
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        initialX = titleParams.x;
-                        initialY = titleParams.y;
+                        initialX = winX;
+                        initialY = winY;
                         initialTouchX = event.getRawX();
                         initialTouchY = event.getRawY();
+                        dragWinX = winX;
+                        dragWinY = winY;
+                        isDragging = false;
                         return true;
+
                     case MotionEvent.ACTION_MOVE:
                         int screenW = getResources().getDisplayMetrics().widthPixels;
                         int screenH = getResources().getDisplayMetrics().heightPixels;
-                        int newX = initialX + (int) (event.getRawX() - initialTouchX);
-                        int newY = initialY + (int) (event.getRawY() - initialTouchY);
-                        int curW = (titleParams.width == WindowManager.LayoutParams.MATCH_PARENT) ? screenW : titleParams.width;
-                        int curH = titleParams.height;
-                        newX = Math.max(0, Math.min(newX, screenW - curW));
-                        newY = Math.max(0, Math.min(newY, screenH - curH));
-                        titleParams.x = newX;
-                        titleParams.y = newY;
-                        if (titleBarView != null && titleBarView.getParent() != null) {
-                            windowManager.updateViewLayout(titleBarView, titleParams);
+                        int dx = (int) (event.getRawX() - initialTouchX);
+                        int dy = (int) (event.getRawY() - initialTouchY);
+                        if (Math.abs(dx) > dpToPx(6) || Math.abs(dy) > dpToPx(6)) {
+                            isDragging = true;
+                        }
+                        dragWinX = Math.max(0, Math.min(initialX + dx, screenW - winW));
+                        dragWinY = Math.max(0, Math.min(initialY + dy, screenH - winH));
+                        return true;
+
+                    case MotionEvent.ACTION_UP:
+                        if (isDragging) {
+                            winX = dragWinX;
+                            winY = dragWinY;
+                            applyAppViewportOverscan();
                         }
                         return true;
                 }
@@ -495,43 +641,167 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
         });
     }
 
+    private void updateBorderLayout() {
+        if (windowBorderView != null && windowBorderView.getParent() != null && borderParams != null) {
+            borderParams.x = 0;
+            borderParams.y = 0;
+            borderParams.width = WindowManager.LayoutParams.MATCH_PARENT;
+            borderParams.height = WindowManager.LayoutParams.MATCH_PARENT;
+            windowManager.updateViewLayout(windowBorderView, borderParams);
+        }
+    }
+
+    private void applyAppViewportOverscan() {
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+        int screenH = getResources().getDisplayMetrics().heightPixels;
+        int sLeft = winX;
+        int sTop = winY;
+        int sRight = screenW - (winX + winW);
+        int sBottom = screenH - (winY + winH);
+        applyOverscan(sLeft, sTop, sRight, sBottom);
+    }
+
+    private void applyOverscan(int screenLeft, int screenTop, int screenRight, int screenBottom) {
+        // Landscape rotation 1 on Tab 3 (native 600x1024):
+        // native Left = screenBottom
+        // native Top = screenLeft
+        // native Right = screenTop
+        // native Bottom = screenRight
+        setOverscanInternal(screenBottom, screenLeft, screenTop, screenRight);
+    }
+
+    private void resetOverscan() {
+        setOverscanInternal(0, 0, 0, 0);
+    }
+
+    private void setOverscanInternal(final int left, final int top, final int right, final int bottom) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean success = false;
+                try {
+                    Class<?> smClass = Class.forName("android.os.ServiceManager");
+                    java.lang.reflect.Method getServiceMethod = smClass.getMethod("getService", String.class);
+                    android.os.IBinder binder = (android.os.IBinder) getServiceMethod.invoke(null, Context.WINDOW_SERVICE);
+                    Class<?> stubClass = Class.forName("android.view.IWindowManager$Stub");
+                    java.lang.reflect.Method asInterfaceMethod = stubClass.getMethod("asInterface", android.os.IBinder.class);
+                    Object wm = asInterfaceMethod.invoke(null, binder);
+                    java.lang.reflect.Method setOverscanMethod = wm.getClass().getMethod("setOverscan", int.class, int.class, int.class, int.class, int.class);
+                    setOverscanMethod.invoke(wm, 0, left, top, right, bottom);
+                    success = true;
+                    android.util.Log.i("FloatingOverlay", "setOverscan IPC succeeded: " + left + "," + top + "," + right + "," + bottom);
+                } catch (Throwable t) {
+                    android.util.Log.w("FloatingOverlay", "setOverscan IPC failed: " + t.getMessage());
+                }
+
+                if (!success) {
+                    try {
+                        String cmd = (left == 0 && top == 0 && right == 0 && bottom == 0)
+                                ? "wm overscan reset"
+                                : "wm overscan " + left + "," + top + "," + right + "," + bottom;
+                        Process p = Runtime.getRuntime().exec(cmd);
+                        p.waitFor();
+                    } catch (Throwable ignored) {}
+                }
+            }
+        }).start();
+    }
+
     private void toggleRestoreMode() {
+        if (isImmersive) {
+            toggleImmersiveMode();
+            return;
+        }
+
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+
         if (isRestored) {
             // Return to Maximized Mode
             isRestored = false;
+            resetOverscan();
+            hideBorder();
+            showTaskbar();
+
+            titleParams.width = WindowManager.LayoutParams.MATCH_PARENT;
+            titleParams.height = dpToPx(28);
+            titleParams.x = 0;
+            titleParams.y = 0;
+            btnMax.setImageResource(R.drawable.btn_restore);
+            android.util.Log.i("FloatingOverlay", "Switched to Maximized Mode");
+        } else {
+            // Switch to Restored Floating Frame Mode
+            isRestored = true;
+            hideTaskbar();
+
+            winW = dpToPx(760);
+            winH = dpToPx(480);
+            winX = (screenW - winW) / 2;
+            winY = dpToPx(32);
+
             titleParams.width = WindowManager.LayoutParams.MATCH_PARENT;
             titleParams.height = dpToPx(28);
             titleParams.x = 0;
             titleParams.y = 0;
             btnMax.setImageResource(R.drawable.btn_max);
-        } else {
-            // Switch to Restored Floating Frame Mode
-            isRestored = true;
-            titleParams.width = dpToPx(520);
-            titleParams.height = dpToPx(28);
-            titleParams.x = dpToPx(40);
-            titleParams.y = dpToPx(30);
-            btnMax.setImageResource(R.drawable.btn_restore);
+
+            showBorder();
+            updateBorderLayout();
+            applyAppViewportOverscan();
+            android.util.Log.i("FloatingOverlay", "Switched to Restored Floating Frame Mode");
         }
+
         applyThemeColors();
         if (titleBarView != null && titleBarView.getParent() != null) {
             windowManager.updateViewLayout(titleBarView, titleParams);
         }
     }
 
+    public void toggleImmersiveMode() {
+        isImmersive = !isImmersive;
+        if (isImmersive) {
+            resetOverscan();
+            hideOverlay();
+            hideBorder();
+            showImmersivePill();
+            Toast.makeText(this, "Immersive Mode (Tap top pill to exit)", Toast.LENGTH_SHORT).show();
+        } else {
+            hideImmersivePill();
+            showOverlay();
+            if (isRestored) {
+                showBorder();
+                hideTaskbar();
+                updateBorderLayout();
+                applyAppViewportOverscan();
+            } else {
+                hideBorder();
+                showTaskbar();
+            }
+            refreshOverlayTabs();
+            updateOverlayClock();
+        }
+    }
+
     private void minimizeApp() {
+        isRestored = false;
+        resetOverscan();
         Intent home = new Intent(this, LauncherActivity.class);
         home.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         startActivity(home);
         hideOverlay();
+        hideBorder();
+        hideImmersivePill();
         Toast.makeText(this, appLabel + " minimized to taskbar", Toast.LENGTH_SHORT).show();
     }
 
     private void closeApp() {
+        isRestored = false;
+        resetOverscan();
         Intent home = new Intent(this, LauncherActivity.class);
         home.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         startActivity(home);
         hideOverlay();
+        hideBorder();
+        hideImmersivePill();
         if (packageName != null && !packageName.isEmpty()) {
             try {
                 ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
@@ -542,17 +812,31 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
         }
     }
 
+    private void showTaskbar() {
+        try {
+            if (taskbarOverlayView != null && taskbarOverlayView.getParent() == null) {
+                windowManager.addView(taskbarOverlayView, taskbarParams);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void hideTaskbar() {
+        try {
+            if (taskbarOverlayView != null && taskbarOverlayView.getParent() != null) {
+                windowManager.removeView(taskbarOverlayView);
+            }
+        } catch (Exception ignored) {}
+    }
+
     private void showOverlay() {
         try {
             if (titleBarView != null && titleBarView.getParent() == null) {
                 windowManager.addView(titleBarView, titleParams);
             }
         } catch (Exception ignored) {}
-        try {
-            if (taskbarOverlayView != null && taskbarOverlayView.getParent() == null) {
-                windowManager.addView(taskbarOverlayView, taskbarParams);
-            }
-        } catch (Exception ignored) {}
+        if (!isRestored) {
+            showTaskbar();
+        }
     }
 
     private void hideOverlay() {
@@ -561,9 +845,37 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
                 windowManager.removeView(titleBarView);
             }
         } catch (Exception ignored) {}
+        hideTaskbar();
+    }
+
+    private void showBorder() {
         try {
-            if (taskbarOverlayView != null && taskbarOverlayView.getParent() != null) {
-                windowManager.removeView(taskbarOverlayView);
+            if (windowBorderView != null && windowBorderView.getParent() == null) {
+                windowManager.addView(windowBorderView, borderParams);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void hideBorder() {
+        try {
+            if (windowBorderView != null && windowBorderView.getParent() != null) {
+                windowManager.removeView(windowBorderView);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void showImmersivePill() {
+        try {
+            if (immersivePillView != null && immersivePillView.getParent() == null) {
+                windowManager.addView(immersivePillView, pillParams);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void hideImmersivePill() {
+        try {
+            if (immersivePillView != null && immersivePillView.getParent() != null) {
+                windowManager.removeView(immersivePillView);
             }
         } catch (Exception ignored) {}
     }
@@ -576,7 +888,6 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
                 new int[]{tm.getTitlebarActiveStart(), tm.getTitlebarActiveEnd()});
         if (isRestored) {
             gd.setCornerRadius(dpToPx(4));
-            gd.setStroke(dpToPx(1), tm.getWindowBorderColor());
         } else {
             gd.setCornerRadii(new float[]{dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4), 0, 0, 0, 0});
         }
@@ -584,6 +895,7 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
         if (tvTitle != null) {
             tvTitle.setTextColor(tm.getTitlebarTextColor());
         }
+        updateBorderDrawable();
         if (taskbarOverlayView != null) {
             taskbarOverlayView.setBackgroundResource(tm.getTaskbarBgRes());
         }
@@ -609,7 +921,10 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
         isPollingActive = false;
         handler.removeCallbacks(taskWatcher);
         ThemeManager.getInstance().removeListener(this);
+        resetOverscan();
         hideOverlay();
+        hideBorder();
+        hideImmersivePill();
     }
 
     private int dpToPx(int dp) {
