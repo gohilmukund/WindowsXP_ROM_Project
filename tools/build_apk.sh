@@ -16,6 +16,12 @@ ANDROID_JAR="/usr/local/lib/android.jar"
 R8_JAR="/usr/local/lib/r8.jar"
 KEYSTORE="/usr/local/lib/debug.keystore"
 
+TOOLS_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$TOOLS_DIR/run_tests.sh" ] && [[ "$APP_DIR" == *"LunaLauncher"* ]]; then
+    echo "[0/5] Running automated regression tests..."
+    "$TOOLS_DIR/run_tests.sh"
+fi
+
 cd "$APP_DIR"
 
 rm -rf build
