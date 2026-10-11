@@ -42,6 +42,9 @@ echo "[3/5] Dexing bytecodes with D8..."
 java -cp "$R8_JAR" com.android.tools.r8.D8 --min-api 19 --lib "$ANDROID_JAR" --output build/bin $(find build/bin/classes -name "*.class")
 
 echo "[4/5] Packaging APK with aapt..."
+if [ -d "lib" ]; then
+    cp -r lib build/bin/
+fi
 cd build/bin
 if [ -d "../../res" ]; then
     aapt package -f -M ../../AndroidManifest.xml -S ../../res -I "$ANDROID_JAR" -F raw.apk .
