@@ -187,6 +187,59 @@ public class ThemeManagerTest {
                 throw new AssertionError("getStartMenuBottomColors elements must be non-zero for theme " + themeName);
             }
         }
+
+        // Verify Royale titlebar and border color tokens
+        Method mActiveStart = tmClass.getMethod("getTitlebarActiveStart");
+        Method mActiveEnd = tmClass.getMethod("getTitlebarActiveEnd");
+        Method mInactiveStart = tmClass.getMethod("getTitlebarInactiveStart");
+        Method mInactiveEnd = tmClass.getMethod("getTitlebarInactiveEnd");
+        Method mBorderColor = tmClass.getMethod("getWindowBorderColor");
+        Method mTaskbarBg = tmClass.getMethod("getTaskbarBgRes");
+
+        @SuppressWarnings("unchecked")
+        Object royaleTheme = Enum.valueOf((Class<Enum>) themeEnum, "ROYALE");
+        setThemeMethod.invoke(tm, royaleTheme);
+
+        int activeStart = (Integer) mActiveStart.invoke(tm);
+        if (activeStart != 0xFF2E62D4) {
+            throw new AssertionError("Royale active titlebar start expected 0xFF2E62D4, got 0x" +
+                Integer.toHexString(activeStart).toUpperCase());
+        }
+
+        int activeEnd = (Integer) mActiveEnd.invoke(tm);
+        if (activeEnd != 0xFF6894EE) {
+            throw new AssertionError("Royale active titlebar end expected 0xFF6894EE, got 0x" +
+                Integer.toHexString(activeEnd).toUpperCase());
+        }
+
+        int inactiveStart = (Integer) mInactiveStart.invoke(tm);
+        if (inactiveStart != 0xFF7A96DF) {
+            throw new AssertionError("Royale inactive titlebar start expected 0xFF7A96DF, got 0x" +
+                Integer.toHexString(inactiveStart).toUpperCase());
+        }
+
+        int inactiveEnd = (Integer) mInactiveEnd.invoke(tm);
+        if (inactiveEnd != 0xFFA8BCF0) {
+            throw new AssertionError("Royale inactive titlebar end expected 0xFFA8BCF0, got 0x" +
+                Integer.toHexString(inactiveEnd).toUpperCase());
+        }
+
+        int borderColor = (Integer) mBorderColor.invoke(tm);
+        if (borderColor != 0xFF004BAA) {
+            throw new AssertionError("Royale window border color expected 0xFF004BAA, got 0x" +
+                Integer.toHexString(borderColor).toUpperCase());
+        }
+
+        @SuppressWarnings("unchecked")
+        Object win7Theme = Enum.valueOf((Class<Enum>) themeEnum, "WIN7_AERO");
+        setThemeMethod.invoke(tm, win7Theme);
+
+        int taskbarBgWin7 = (Integer) mTaskbarBg.invoke(tm);
+        Class<?> rDrawableClass = Class.forName("com.windows.xp.launcher.R$drawable");
+        int expectedWin7Bg = (Integer) rDrawableClass.getField("taskbar_bg_win7").get(null);
+        if (taskbarBgWin7 != expectedWin7Bg) {
+            throw new AssertionError("WIN7_AERO taskbar bg res expected " + expectedWin7Bg + ", got " + taskbarBgWin7);
+        }
     }
 
     public static void testStartButtonWidths() throws Exception {

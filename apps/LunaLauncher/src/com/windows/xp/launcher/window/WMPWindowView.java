@@ -121,13 +121,13 @@ public class WMPWindowView extends LinearLayout {
         setClickable(true);
         setBackgroundColor(0xFF0F1724); // WMP 11 dark slate background
 
-        // 1. WMP 11 Navigation Header (Now Playing | Library | Rip | Burn | Sync | URGE)
+        // 1. WMP 11 Navigation Header (Now Playing | Library | Rip | Burn | Sync)
         navBar = new LinearLayout(context);
         navBar.setOrientation(HORIZONTAL);
         navBar.setBackgroundColor(0xFF0A101A);
         navBar.setPadding(dpToPx(8), dpToPx(5), dpToPx(8), dpToPx(5));
 
-        String[] tabs = new String[]{"Now Playing", "Library", "Rip", "Burn", "Sync", "URGE"};
+        String[] tabs = new String[]{"Now Playing", "Library", "Rip", "Burn", "Sync"};
         for (int i = 0; i < tabs.length; i++) {
             TextView tv = new TextView(context);
             tv.setText(tabs[i]);
@@ -247,24 +247,36 @@ public class WMPWindowView extends LinearLayout {
         // Open File button
         btnOpenFile = new ImageView(context);
         btnOpenFile.setImageResource(R.drawable.ic_wmp_open);
-        btnOpenFile.setBackgroundResource(R.drawable.wmp11_circle_btn_bg);
+        // btnOpenFile.setBackgroundResource(R.drawable.wmp11_circle_btn_bg);
         int padCircleSmall = dpToPx(6);
         btnOpenFile.setPadding(padCircleSmall, padCircleSmall, padCircleSmall, padCircleSmall);
-        LayoutParams openLp = new LayoutParams(dpToPx(34), dpToPx(34));
+        LayoutParams openLp = new LayoutParams(dpToPx(30), dpToPx(30));
         openLp.rightMargin = dpToPx(16);
         btnOpenFile.setLayoutParams(openLp);
         btnOpenFile.setClickable(true);
         btnOpenFile.setFocusable(true);
         btnRow.addView(btnOpenFile);
 
+          // Circular Stop button (Authentic WMP 11)
+        btnStop = new ImageView(context);
+        btnStop.setImageResource(R.drawable.ic_wmp_stop);
+        // btnStop.setBackgroundResource(R.drawable.wmp11_circle_btn_bg);
+        btnStop.setPadding(padCircleSmall, padCircleSmall, padCircleSmall, padCircleSmall);
+        LayoutParams stopLp = new LayoutParams(dpToPx(30), dpToPx(30));
+        stopLp.leftMargin = dpToPx(16);
+        btnStop.setLayoutParams(stopLp);
+        btnStop.setClickable(true);
+        btnStop.setFocusable(true);
+        btnRow.addView(btnStop);
+
         // Circular Prev button (Authentic WMP 11)
         btnPrev = new ImageView(context);
         btnPrev.setImageResource(R.drawable.ic_wmp_prev);
-        btnPrev.setBackgroundResource(R.drawable.wmp11_circle_btn_bg);
-        int padCircle = dpToPx(8);
-        btnPrev.setPadding(padCircle, padCircle, padCircle, padCircle);
+        // btnPrev.setBackgroundResource(R.drawable.wmp11_circle_btn_bg);
+        // int padCircle = dpToPx(8);
+        // btnPrev.setPadding(padCircle, padCircle, padCircle, padCircle);
         LayoutParams prevLp = new LayoutParams(dpToPx(38), dpToPx(38));
-        prevLp.rightMargin = dpToPx(12);
+        prevLp.rightMargin = dpToPx(-5);
         btnPrev.setLayoutParams(prevLp);
         btnPrev.setClickable(true);
         btnPrev.setFocusable(true);
@@ -274,8 +286,8 @@ public class WMPWindowView extends LinearLayout {
         btnPlayPause = new ImageView(context);
         btnPlayPause.setImageResource(R.drawable.ic_wmp_play);
         btnPlayPause.setBackgroundResource(R.drawable.wmp11_play_bg);
-        int padPlay = dpToPx(10);
-        btnPlayPause.setPadding(padPlay, padPlay, padPlay, padPlay);
+        // int padPlay = dpToPx(1);
+        // btnPlayPause.setPadding(padPlay, padPlay, padPlay, padPlay);
         LayoutParams playLp = new LayoutParams(dpToPx(50), dpToPx(50));
         btnPlayPause.setLayoutParams(playLp);
         btnPlayPause.setClickable(true);
@@ -285,33 +297,23 @@ public class WMPWindowView extends LinearLayout {
         // Circular Next button (Authentic WMP 11)
         btnNext = new ImageView(context);
         btnNext.setImageResource(R.drawable.ic_wmp_next);
-        btnNext.setBackgroundResource(R.drawable.wmp11_circle_btn_bg);
-        btnNext.setPadding(padCircle, padCircle, padCircle, padCircle);
+        // btnNext.setBackgroundResource(R.drawable.wmp11_circle_btn_bg);
+        // btnNext.setPadding(padCircle, padCircle, padCircle, padCircle);
         LayoutParams nextLp = new LayoutParams(dpToPx(38), dpToPx(38));
-        nextLp.leftMargin = dpToPx(12);
+        nextLp.leftMargin = dpToPx(-5);
         btnNext.setLayoutParams(nextLp);
         btnNext.setClickable(true);
         btnNext.setFocusable(true);
         btnRow.addView(btnNext);
 
-        // Circular Stop button (Authentic WMP 11)
-        btnStop = new ImageView(context);
-        btnStop.setImageResource(R.drawable.ic_wmp_stop);
-        btnStop.setBackgroundResource(R.drawable.wmp11_circle_btn_bg);
-        btnStop.setPadding(padCircleSmall, padCircleSmall, padCircleSmall, padCircleSmall);
-        LayoutParams stopLp = new LayoutParams(dpToPx(34), dpToPx(34));
-        stopLp.leftMargin = dpToPx(16);
-        btnStop.setLayoutParams(stopLp);
-        btnStop.setClickable(true);
-        btnStop.setFocusable(true);
-        btnRow.addView(btnStop);
+      
 
         // Fullscreen / Immersive Button (Authentic WMP 11)
         btnFullscreen = new ImageView(context);
         btnFullscreen.setImageResource(R.drawable.ic_wmp_fullscreen);
-        btnFullscreen.setBackgroundResource(R.drawable.wmp11_circle_btn_bg);
+        // btnFullscreen.setBackgroundResource(R.drawable.wmp11_circle_btn_bg);
         btnFullscreen.setPadding(padCircleSmall, padCircleSmall, padCircleSmall, padCircleSmall);
-        LayoutParams fsLp = new LayoutParams(dpToPx(34), dpToPx(34));
+        LayoutParams fsLp = new LayoutParams(dpToPx(30), dpToPx(30));
         fsLp.leftMargin = dpToPx(16);
         btnFullscreen.setLayoutParams(fsLp);
         btnFullscreen.setClickable(true);

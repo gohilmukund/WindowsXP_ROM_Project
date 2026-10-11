@@ -643,6 +643,7 @@ public class DisplayPropertiesWindowView extends LinearLayout {
             int wallColor = 0xFF2B5B9C;
             int taskbarColor = 0xFF245EDC;
             int titleStart = 0xFF0055EA;
+            int titleEnd = 0xFF00138C;
             int startBtnColor = 0xFF3C9E35;
 
             switch (previewTheme) {
@@ -660,8 +661,9 @@ public class DisplayPropertiesWindowView extends LinearLayout {
                     break;
                 case ROYALE:
                     wallColor = 0xFF10488A;
-                    taskbarColor = 0xFF003B99;
-                    titleStart = 0xFF1073E6;
+                    taskbarColor = 0xFF254394;
+                    titleStart = 0xFF2E62D4;
+                    titleEnd = 0xFF6894EE;
                     startBtnColor = 0xFF28A048;
                     break;
                 case CLASSIC:
@@ -737,7 +739,7 @@ public class DisplayPropertiesWindowView extends LinearLayout {
             switch (previewTheme) {
                 case LUNA_OLIVE: tabColor = 0xFF465F29; break;
                 case LUNA_SILVER: tabColor = 0xFF969CAE; break;
-                case ROYALE: tabColor = 0xFF002B7A; break;
+                case ROYALE: tabColor = 0xFF1044A8; break;
                 case CLASSIC: tabColor = 0xFFC8C4BC; break;
                 case VISTA: tabColor = 0xFF284A6E; break;
                 case WIN7_AERO: tabColor = 0xFF4E92CC; break;

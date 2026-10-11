@@ -266,7 +266,7 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return 0xFF759954;
             case LUNA_SILVER: return 0xFFE2E4EB;
-            case ROYALE: return 0xFF1073E6;
+            case ROYALE: return 0xFF2E62D4;
             case CLASSIC: return 0xFF0A246A;
             case VISTA: return 0xDD1B222A;
             case WIN7_AERO: return 0xCC1A385C;
@@ -281,7 +281,7 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return 0xFF45672E;
             case LUNA_SILVER: return 0xFFA6ABB8;
-            case ROYALE: return 0xFF0048B3;
+            case ROYALE: return 0xFF6894EE;
             case CLASSIC: return 0xFFA6CAF0;
             case VISTA: return 0xEE0D1217;
             case WIN7_AERO: return 0xDD28588E;
@@ -311,7 +311,7 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return 0xFF6C825B;
             case LUNA_SILVER: return 0xFFB0B4C0;
-            case ROYALE: return 0xFF5A70B2;
+            case ROYALE: return 0xFFA8BCF0;
             case CLASSIC: return 0xFFB5B5B5;
             case VISTA: return 0xCC1A2028;
             case WIN7_AERO: return 0xAA3B5B84;
@@ -336,7 +336,7 @@ public class ThemeManager {
         switch (currentTheme) {
             case LUNA_OLIVE: return 0xFF45672E;
             case LUNA_SILVER: return 0xFFA6ABB8;
-            case ROYALE: return 0xFF0048B3;
+            case ROYALE: return 0xFF004BAA;
             case CLASSIC: return 0xFFD4D0C8;
             case VISTA: return 0xFF2A3440;
             case WIN7_AERO: return 0x99356699;
