@@ -576,6 +576,8 @@ public class DisplayPropertiesWindowView extends LinearLayout {
                 case WIN7_AERO: return R.drawable.wallpaper_win7;
                 case LUNA_OLIVE: return R.drawable.wallpaper_olive;
                 case LUNA_SILVER: return R.drawable.wallpaper_silver;
+                case ROYALE: return R.drawable.wallpaper_royale;
+                case WIN11: return R.drawable.wallpaper_win11;
                 case LUNA_BLUE:
                 default:
                     return R.drawable.bliss_wallpaper;
@@ -645,6 +647,13 @@ public class DisplayPropertiesWindowView extends LinearLayout {
                     titleEnd = 0xFFA6ABB8;
                     startBtnColor = 0xFF3C9E35;
                     break;
+                case ROYALE:
+                    wallColor = 0xFF10488A;
+                    taskbarColor = 0xFF003B99;
+                    titleStart = 0xFF1073E6;
+                    titleEnd = 0xFF0048B3;
+                    startBtnColor = 0xFF28A048;
+                    break;
                 case CLASSIC:
                     wallColor = 0xFF008080;
                     taskbarColor = 0xFFD4D0C8;
@@ -665,6 +674,13 @@ public class DisplayPropertiesWindowView extends LinearLayout {
                     titleStart = 0xFF1A385C;
                     titleEnd = 0xFF28588E;
                     startBtnColor = 0xFF2164A8;
+                    break;
+                case WIN11:
+                    wallColor = 0xFFE0E8F5;
+                    taskbarColor = 0xFFF3F3F3;
+                    titleStart = 0xFFE8E8E8;
+                    titleEnd = 0xFFE8E8E8;
+                    startBtnColor = 0xFF0078D4;
                     break;
             }
 
@@ -715,9 +731,11 @@ public class DisplayPropertiesWindowView extends LinearLayout {
             switch (previewTheme) {
                 case LUNA_OLIVE: tabColor = 0xFF465F29; break;
                 case LUNA_SILVER: tabColor = 0xFF969CAE; break;
+                case ROYALE: tabColor = 0xFF002B7A; break;
                 case CLASSIC: tabColor = 0xFFC8C4BC; break;
                 case VISTA: tabColor = 0xFF284A6E; break;
                 case WIN7_AERO: tabColor = 0xFF4E92CC; break;
+                case WIN11: tabColor = 0xFFD0D0D0; break;
             }
             paint.setColor(tabColor);
             canvas.drawRect(screenX + 28, screenY + screenH - 9, screenX + 62, screenY + screenH - 1, paint);
