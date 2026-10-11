@@ -550,15 +550,18 @@ public class WMPWindowView extends LinearLayout {
                 }
                 audioPlayer.prepare();
                 audioPlayer.start();
+                isPlaying = true;
+                btnPlayPause.setImageResource(R.drawable.ic_wmp_pause);
+                progressHandler.post(progressRunnable);
             } catch (Exception e) {
                 e.printStackTrace();
+                isPlaying = false;
+                visualizerView.setPlaying(false);
+                btnPlayPause.setImageResource(R.drawable.ic_wmp_play);
                 Toast.makeText(getContext(), "Error playing audio: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         }
 
-        isPlaying = true;
-        btnPlayPause.setImageResource(R.drawable.ic_wmp_pause);
-        progressHandler.post(progressRunnable);
         playlistAdapter.notifyDataSetChanged();
     }
 
@@ -768,6 +771,12 @@ public class WMPWindowView extends LinearLayout {
         playlist.add(customTrack);
         playlistAdapter.notifyDataSetChanged();
         playTrack(playlist.size() - 1);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        onDestroy();
     }
 
     public void onDestroy() {

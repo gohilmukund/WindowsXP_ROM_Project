@@ -81,6 +81,14 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
     private int initialX, initialY;
     private float initialTouchX, initialTouchY;
 
+    private static final java.util.concurrent.ExecutorService OVERSCAN_EXECUTOR =
+            java.util.concurrent.Executors.newSingleThreadExecutor();
+    private static java.lang.reflect.Method sSetOverscanMethod = null;
+    private static Object sWindowManagerService = null;
+    private static boolean sReflectionInitialized = false;
+
+    private String lastTasksCacheKey = "";
+
     private final Handler handler = new Handler();
     private boolean isPollingActive = false;
 
@@ -476,12 +484,24 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
 
     private void refreshOverlayTabs() {
         if (overlayTabsContainer == null) return;
-        overlayTabsContainer.removeAllViews();
         try {
             ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
             if (am == null) return;
             List<ActivityManager.RunningTaskInfo> tasks = am.getRunningTasks(6);
             if (tasks == null) return;
+
+            StringBuilder sb = new StringBuilder();
+            for (ActivityManager.RunningTaskInfo task : tasks) {
+                ComponentName cn = task.topActivity != null ? task.topActivity : task.baseActivity;
+                if (cn != null) sb.append(cn.getPackageName()).append(";");
+            }
+            String currentKey = sb.toString();
+            if (currentKey.equals(lastTasksCacheKey) && overlayTabsContainer.getChildCount() > 0) {
+                return;
+            }
+            lastTasksCacheKey = currentKey;
+
+            overlayTabsContainer.removeAllViews();
             PackageManager pm = getPackageManager();
 
             for (final ActivityManager.RunningTaskInfo task : tasks) {
@@ -662,12 +682,47 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
     }
 
     private void applyOverscan(int screenLeft, int screenTop, int screenRight, int screenBottom) {
-        // Landscape rotation 1 on Tab 3 (native 600x1024):
-        // native Left = screenBottom
-        // native Top = screenLeft
-        // native Right = screenTop
-        // native Bottom = screenRight
-        setOverscanInternal(screenBottom, screenLeft, screenTop, screenRight);
+        int rotation = android.view.Surface.ROTATION_90;
+        try {
+            if (windowManager != null && windowManager.getDefaultDisplay() != null) {
+                rotation = windowManager.getDefaultDisplay().getRotation();
+            }
+        } catch (Exception ignored) {}
+
+        int nativeLeft, nativeTop, nativeRight, nativeBottom;
+        switch (rotation) {
+            case android.view.Surface.ROTATION_0:
+                nativeLeft = screenLeft;
+                nativeTop = screenTop;
+                nativeRight = screenRight;
+                nativeBottom = screenBottom;
+                break;
+            case android.view.Surface.ROTATION_90: // Samsung Tab 3 standard landscape
+                nativeLeft = screenBottom;
+                nativeTop = screenLeft;
+                nativeRight = screenTop;
+                nativeBottom = screenRight;
+                break;
+            case android.view.Surface.ROTATION_180:
+                nativeLeft = screenRight;
+                nativeTop = screenBottom;
+                nativeRight = screenLeft;
+                nativeBottom = screenTop;
+                break;
+            case android.view.Surface.ROTATION_270:
+                nativeLeft = screenTop;
+                nativeTop = screenRight;
+                nativeRight = screenBottom;
+                nativeBottom = screenLeft;
+                break;
+            default:
+                nativeLeft = screenBottom;
+                nativeTop = screenLeft;
+                nativeRight = screenTop;
+                nativeBottom = screenRight;
+                break;
+        }
+        setOverscanInternal(nativeLeft, nativeTop, nativeRight, nativeBottom);
     }
 
     private void resetOverscan() {
@@ -675,23 +730,37 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
     }
 
     private void setOverscanInternal(final int left, final int top, final int right, final int bottom) {
-        new Thread(new Runnable() {
+        OVERSCAN_EXECUTOR.execute(new Runnable() {
             @Override
             public void run() {
                 boolean success = false;
                 try {
-                    Class<?> smClass = Class.forName("android.os.ServiceManager");
-                    java.lang.reflect.Method getServiceMethod = smClass.getMethod("getService", String.class);
-                    android.os.IBinder binder = (android.os.IBinder) getServiceMethod.invoke(null, Context.WINDOW_SERVICE);
-                    Class<?> stubClass = Class.forName("android.view.IWindowManager$Stub");
-                    java.lang.reflect.Method asInterfaceMethod = stubClass.getMethod("asInterface", android.os.IBinder.class);
-                    Object wm = asInterfaceMethod.invoke(null, binder);
-                    java.lang.reflect.Method setOverscanMethod = wm.getClass().getMethod("setOverscan", int.class, int.class, int.class, int.class, int.class);
-                    setOverscanMethod.invoke(wm, 0, left, top, right, bottom);
-                    success = true;
-                    android.util.Log.i("FloatingOverlay", "setOverscan IPC succeeded: " + left + "," + top + "," + right + "," + bottom);
+                    synchronized (FloatingWindowOverlayService.class) {
+                        if (!sReflectionInitialized) {
+                            try {
+                                Class<?> smClass = Class.forName("android.os.ServiceManager");
+                                java.lang.reflect.Method getServiceMethod = smClass.getMethod("getService", String.class);
+                                android.os.IBinder binder = (android.os.IBinder) getServiceMethod.invoke(null, Context.WINDOW_SERVICE);
+                                Class<?> stubClass = Class.forName("android.view.IWindowManager$Stub");
+                                java.lang.reflect.Method asInterfaceMethod = stubClass.getMethod("asInterface", android.os.IBinder.class);
+                                sWindowManagerService = asInterfaceMethod.invoke(null, binder);
+                                if (sWindowManagerService != null) {
+                                    sSetOverscanMethod = sWindowManagerService.getClass().getMethod("setOverscan", int.class, int.class, int.class, int.class, int.class);
+                                }
+                            } catch (Throwable e) {
+                                android.util.Log.w("FloatingOverlay", "Failed to resolve setOverscan reflection: " + e.getMessage());
+                            }
+                            sReflectionInitialized = true;
+                        }
+                    }
+
+                    if (sSetOverscanMethod != null && sWindowManagerService != null) {
+                        sSetOverscanMethod.invoke(sWindowManagerService, 0, left, top, right, bottom);
+                        success = true;
+                        android.util.Log.i("FloatingOverlay", "setOverscan IPC succeeded: " + left + "," + top + "," + right + "," + bottom);
+                    }
                 } catch (Throwable t) {
-                    android.util.Log.w("FloatingOverlay", "setOverscan IPC failed: " + t.getMessage());
+                    android.util.Log.w("FloatingOverlay", "setOverscan IPC error: " + t.getMessage());
                 }
 
                 if (!success) {
@@ -704,7 +773,7 @@ public class FloatingWindowOverlayService extends Service implements ThemeManage
                     } catch (Throwable ignored) {}
                 }
             }
-        }).start();
+        });
     }
 
     private void toggleRestoreMode() {
